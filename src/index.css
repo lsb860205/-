@@ -1,0 +1,37 @@
+@import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@300;400;500;600&family=Noto+Sans+KR:wght@300;400;500&display=swap');
+@import "tailwindcss";
+
+@theme {
+  --color-bg-white: #F2F1ED;
+  --color-bg-warm: #EAE9E4;
+  --color-text-main: #1A1A1A;
+  --color-text-sub: #6B6B6B;
+  --color-accent: #8B7355;
+  --color-border: #E2E1DC;
+  
+  --font-ui: "Montserrat", sans-serif;
+  --font-kr: "Noto Sans KR", sans-serif;
+}
+
+@layer base {
+  body {
+    @apply bg-bg-white text-text-main font-kr antialiased;
+  }
+}
+
+.page-transition {
+  animation: fadeIn 0.4s ease;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+.gallery-editorial-item:nth-child(odd) {
+  @apply md:pr-[8%];
+}
+
+.gallery-editorial-item:nth-child(even) {
+  @apply md:pl-[8%] md:mt-32;
+}

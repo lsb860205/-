@@ -1,0 +1,52 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // Helper functions
+    function isSignedIn() {
+      return request.auth != null;
+    }
+    
+    function isValidId(id) {
+      return id is string && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$');
+    }
+
+    function isValidProject(data) {
+      return data.keys().hasAll(['category', 'clientName', 'mainImage', 'order']) &&
+             data.category in ['place', 'food', 'nature'] &&
+             data.clientName is string &&
+             data.mainImage is string &&
+             data.order is number;
+    }
+
+    function isValidSettings(data) {
+      return data.keys().hasAny(['homeHeadline', 'homeIntro', 'aboutHeadline', 'aboutSub', 'aboutBody', 'heroImages', 'aboutImage', 'featuredPlaceId', 'featuredFoodId', 'featuredNatureId']) &&
+             (data.get('homeHeadline', '') is string) &&
+             (data.get('heroImages', []) is list);
+    }
+
+    // Default deny
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    // Settings
+    match /settings/{docId} {
+      allow read: if true;
+      allow write: if isSignedIn();
+    }
+
+    // Projects
+    match /projects/{projectId} {
+      allow read: if true;
+      allow create: if isSignedIn() && isValidProject(request.resource.data) && isValidId(projectId);
+      allow update: if isSignedIn() && isValidProject(request.resource.data);
+      allow delete: if isSignedIn();
+
+      // Gallery Subcollection
+      match /gallery/{photoId} {
+        allow read: if true;
+        allow write: if isSignedIn() && isValidId(photoId);
+      }
+    }
+  }
+}
