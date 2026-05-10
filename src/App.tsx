@@ -20,12 +20,8 @@ const DEFAULT_SETTINGS: GlobalSettings = {
   homeIntro: "웨이블릿 스튜디오는 제주의 고유한 빛과 결을 담습니다.\n사진은 찰나의 순간을 기록하는 것을 넘어, 그 공간과 음식, 자연이 품고 있는 이야기를 시처럼 풀어내는 과정이라 믿습니다.",
   aboutHeadline: "Wavelet Studio",
   aboutSub: "제주의 빛과 결을 담는 스튜디오",
-  aboutBody: "웨이블릿 스튜디오는 제주에 기반을 둔 포토그래피 스튜디오입니다.\n공간, 음식, 자연이라는 세 가지 시선으로 제주의 일상을 기록합니다. 우리는 사진 한 장에 담긴 빛과 그림자, 질감과 온도를 소중히 여깁니다. 카페의 조용한 오후, 한 접시 위에 놓인 계절, 오름 너머로 스며드는 저녁 빛. 그 순간들을 있는 그대로, 그러나 특별하게 담아냅니다.",
-  heroImages: [
-    'https://picsum.photos/1920/1080?random=1',
-    'https://picsum.photos/1920/1080?random=2',
-    'https://picsum.photos/1920/1080?random=3'
-  ]
+  aboutBody: "웨이블릿 스튜디오는 제주의 일상을 기록합니다. 우리는 사진 한 장에 담긴 빛과 그림자, 질감과 온도를 소중히 여깁니다. 그 순간들을 있는 그대로, 그러나 특별하게 담아냅니다.",
+  heroImages: []
 };
 
 const CATEGORY_META = {
@@ -79,18 +75,40 @@ export default function App() {
   const [password, setPassword] = useState('');
   const [settings, setSettings] = useState<GlobalSettings>(DEFAULT_SETTINGS);
   const [projects, setProjects] = useState<Project[]>([]);
+  const [isInitialLoad, setIsInitialLoad] = useState(true);
   const [user, setUser] = useState(auth.currentUser);
 
   useEffect(() => auth.onAuthStateChanged(u => setUser(u)), []);
 
   useEffect(() => {
+    let settingsLoaded = false;
+    let projectsLoaded = false;
+
+    const checkLoaded = () => {
+      if (settingsLoaded && projectsLoaded) {
+        setIsInitialLoad(false);
+      }
+    };
+
     const unsubSettings = onSnapshot(doc(db, 'settings', 'main'), (snap) => {
       if (snap.exists()) setSettings(snap.data() as GlobalSettings);
-    }, (err) => handleFirestoreError(err, OperationType.GET, 'settings/main'));
+      settingsLoaded = true;
+      checkLoaded();
+    }, (err) => {
+      handleFirestoreError(err, OperationType.GET, 'settings/main');
+      settingsLoaded = true;
+      checkLoaded();
+    });
 
     const unsubProjects = onSnapshot(query(collection(db, 'projects'), orderBy('order', 'asc')), (snap) => {
       setProjects(snap.docs.map(d => ({ id: d.id, ...d.data() })) as Project[]);
-    }, (err) => handleFirestoreError(err, OperationType.LIST, 'projects'));
+      projectsLoaded = true;
+      checkLoaded();
+    }, (err) => {
+      handleFirestoreError(err, OperationType.LIST, 'projects');
+      projectsLoaded = true;
+      checkLoaded();
+    });
 
     return () => { unsubSettings(); unsubProjects(); };
   }, []);
@@ -283,6 +301,10 @@ export default function App() {
     );
   }
 
+  if (isInitialLoad) {
+    return <div className="min-h-screen bg-bg-white" />;
+  }
+
   return (
     <div className="bg-bg-white text-black font-sans selection:bg-black selection:text-white">
       <Navbar currentPage={currentPage} onNavigate={navigateTo} />
@@ -347,12 +369,13 @@ export default function App() {
 // Sub-views to keep App.tsx clean
 const HomeView = ({ settings, onNavigate, allProjects }: any) => {
   const [heroIndex, setHeroIndex] = useState(0);
-  const heroes = (settings?.heroImages?.length || 0) > 0 ? settings.heroImages : DEFAULT_SETTINGS.heroImages;
+  const heroes = settings?.heroImages || [];
 
   useEffect(() => {
-    const interval = setInterval(() => setHeroIndex(v => (v + 1) % (heroes?.length || 1)), 6000);
+    if (heroes.length <= 1) return;
+    const interval = setInterval(() => setHeroIndex(v => (v + 1) % heroes.length), 6000);
     return () => clearInterval(interval);
-  }, [heroes?.length]);
+  }, [heroes.length]);
 
   const featured = useMemo(() => {
     const findFeatured = (id?: string, cat?: string) => {
