@@ -452,13 +452,13 @@ const HomeView = ({ settings, onNavigate, allProjects }: any) => {
         </motion.div>
       </section>
 
-      <section className="px-6 md:px-10 py-20 md:py-32 lg:py-40 grid lg:grid-cols-2 gap-12 lg:gap-24 max-w-[1200px] mx-auto items-start lg:items-center">
-        <h2 className="font-ui text-[28px] md:text-[36px] lg:text-[48px] text-text-main leading-[1.2] font-light tracking-tight lg:max-w-[500px]">
+      <section className="px-6 md:px-10 py-16 md:py-24 lg:py-40 grid lg:grid-cols-2 gap-10 lg:gap-24 max-w-[1200px] mx-auto items-start lg:items-center">
+        <h2 className="font-ui text-[26px] sm:text-[32px] md:text-[40px] lg:text-[48px] text-text-main leading-[1.2] font-light tracking-tight lg:max-w-[500px]">
           {settings.homeHeadline}
         </h2>
         <div className="flex flex-col gap-6">
           <div className="w-12 h-[1px] bg-accent/30 hidden lg:block" />
-          <p className="font-kr font-light text-[14px] md:text-[16px] text-text-sub leading-[1.8] md:leading-[2] whitespace-pre-wrap max-w-[550px]">
+          <p className="font-kr font-light text-[13px] md:text-[15px] lg:text-[16px] text-text-sub leading-[1.8] md:leading-[2] whitespace-pre-wrap max-w-[550px]">
             {settings.homeIntro}
           </p>
         </div>
