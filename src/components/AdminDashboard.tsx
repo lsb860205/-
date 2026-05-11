@@ -4,6 +4,7 @@ import { Plus, Trash2, Save, RefreshCw, X, Image as ImageIcon, Upload, Loader2, 
 import { Project, GlobalSettings } from '../types';
 import { compressImage } from '../lib/imageUtils';
 import { getProjectSlug } from '../lib/slugUtils';
+import { auth, signInWithPopup, googleProvider } from '../firebase';
 
 interface AdminDashboardProps {
   settings: GlobalSettings;
@@ -213,10 +214,6 @@ export const AdminDashboard = ({
 
   const handleDeleteClick = (e: React.MouseEvent, project: Project) => {
     e.stopPropagation();
-    if (project.id.startsWith('dummy')) {
-      alert('샘플 데이터는 삭제할 수 없습니다. "초기 데이터 생성"을 눌러 실제 데이터를 먼저 만들어주세요.');
-      return;
-    }
     setDeleteConfirmId(project.id);
   };
 
@@ -256,7 +253,23 @@ export const AdminDashboard = ({
   return (
     <div className="pt-[110px] md:pt-[140px] px-5 sm:px-6 md:px-10 pb-32 max-w-[1200px] mx-auto min-h-screen">
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6 md:gap-8 mb-12 md:mb-16">
-        <h1 className="font-ui text-xl md:text-3xl tracking-tighter font-light">관리자 대시보드</h1>
+        <div className="flex flex-col gap-2">
+          <h1 className="font-ui text-xl md:text-3xl tracking-tighter font-light">관리자 대시보드</h1>
+          <div className="flex items-center gap-2">
+            <div className={`w-1.5 h-1.5 rounded-full ${auth.currentUser ? 'bg-green-500' : 'bg-red-500'}`} />
+            <span className="font-ui text-[9px] tracking-widest text-text-sub uppercase">
+              {auth.currentUser ? `연결됨: ${auth.currentUser.email}` : '구글 인증이 필요합니다'}
+            </span>
+            {!auth.currentUser && (
+              <button 
+                onClick={() => signInWithPopup(auth, googleProvider)}
+                className="font-ui text-[9px] tracking-widest text-accent hover:underline ml-2 uppercase"
+              >
+                인증하기
+              </button>
+            )}
+          </div>
+        </div>
         <div className="flex flex-wrap gap-3 md:gap-8">
           <button 
             onClick={() => setActiveTab('home')} 

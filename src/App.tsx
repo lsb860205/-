@@ -101,8 +101,11 @@ export default function App() {
       checkLoaded();
     });
 
-    const unsubProjects = onSnapshot(query(collection(db, 'projects'), orderBy('order', 'asc')), (snap) => {
-      setProjects(snap.docs.map(d => ({ id: d.id, ...d.data() })) as Project[]);
+    const unsubProjects = onSnapshot(collection(db, 'projects'), (snap) => {
+      const items = snap.docs.map(d => ({ id: d.id, ...d.data() })) as Project[];
+      // Sort in memory to avoid query exclusion of documents missing 'order' field
+      items.sort((a, b) => (a.order ?? 0) - (b.order ?? 0));
+      setProjects(items);
       projectsLoaded = true;
       checkLoaded();
     }, (err) => {
@@ -290,9 +293,9 @@ export default function App() {
     if (!user) return;
     try {
       const batch = writeBatch(db);
-      // Ensure we only update docs that exist and have an ID
+      // Ensure we only update docs that have an ID
       reorderedProjects.forEach((p, i) => {
-        if (p.id && !p.id.startsWith('dummy')) {
+        if (p.id) {
           batch.update(doc(db, 'projects', p.id), { order: i });
         }
       });
