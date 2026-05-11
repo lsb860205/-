@@ -408,12 +408,12 @@ const HomeView = ({ settings, onNavigate, allProjects }: any) => {
           />
         </AnimatePresence>
         <div className="absolute inset-0 bg-black/10" />
-        <div className="relative text-white text-center px-10">
+        <div className="relative text-white text-center px-6 md:px-10">
           <motion.h1 
             initial={{ y: 20, opacity: 0 }} 
             animate={{ y: 0, opacity: 1 }} 
             transition={{ delay: 0.5, duration: 1.2 }}
-            className="font-ui text-[48px] md:text-[80px] font-thin tracking-[-0.05em] leading-none mb-6"
+            className="font-ui text-[28px] min-[380px]:text-[36px] md:text-[60px] lg:text-[80px] font-thin tracking-tight leading-[1.1] mb-6 px-4"
           >
             {settings.homeHeadline}
           </motion.h1>
@@ -421,7 +421,7 @@ const HomeView = ({ settings, onNavigate, allProjects }: any) => {
             initial={{ opacity: 0 }} 
             animate={{ opacity: 1 }} 
             transition={{ delay: 1.2, duration: 1.5 }}
-            className="font-ui text-[12px] md:text-[14px] tracking-[0.5em] font-light uppercase opacity-80"
+            className="font-ui text-[10px] md:text-[11px] lg:text-[14px] tracking-[0.3em] md:tracking-[0.5em] font-light uppercase opacity-80"
           >
             Photography Studio in Jeju
           </motion.p>
@@ -435,16 +435,16 @@ const HomeView = ({ settings, onNavigate, allProjects }: any) => {
         </motion.div>
       </section>
 
-      <section className="px-10 py-40 grid md:grid-cols-2 gap-20 max-w-[1200px] mx-auto items-center">
-        <h2 className="font-ui text-[36px] md:text-[48px] text-text-main leading-tight font-light tracking-tight">
+      <section className="px-6 md:px-10 py-16 md:py-40 grid md:grid-cols-2 gap-10 md:gap-20 max-w-[1200px] mx-auto items-center">
+        <h2 className="font-ui text-[24px] min-[400px]:text-[32px] md:text-[48px] text-text-main leading-tight font-light tracking-tight">
           {settings.homeHeadline}
         </h2>
-        <p className="font-kr font-light text-[15px] text-text-sub leading-[2.2] whitespace-pre-wrap">
+        <p className="font-kr font-light text-[13px] md:text-[15px] text-text-sub leading-[2] md:leading-[2.2] whitespace-pre-wrap">
           {settings.homeIntro}
         </p>
       </section>
 
-      <section className="px-10 pb-40 max-w-[1200px] mx-auto">
+      <section className="px-6 md:px-10 pb-20 md:pb-40 max-w-[1200px] mx-auto">
         <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
           {featured.map((project: Project) => (
             <motion.div 
@@ -470,18 +470,18 @@ const HomeView = ({ settings, onNavigate, allProjects }: any) => {
 };
 
 const AboutView = ({ settings, onNavigate }: any) => (
-  <div className="pt-[140px] bg-bg-white">
-    <section className="px-10 grid md:grid-cols-2 gap-24 max-w-[1200px] mx-auto mb-40 items-center">
-      <div className="space-y-12">
+  <div className="pt-[100px] md:pt-[140px] bg-bg-white">
+    <section className="px-6 md:px-10 grid md:grid-cols-2 gap-16 md:gap-24 max-w-[1200px] mx-auto mb-20 md:mb-40 items-center">
+      <div className="space-y-8 md:space-y-12">
         <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}>
-          <h1 className="font-ui text-[60px] text-text-main font-thin tracking-tighter mb-4">
+          <h1 className="font-ui text-[32px] min-[400px]:text-[48px] md:text-[60px] text-text-main font-thin tracking-tight mb-4">
             {settings.aboutHeadline}
           </h1>
-          <p className="font-ui text-[12px] tracking-[0.4em] text-accent uppercase font-medium">
+          <p className="font-ui text-[10px] md:text-[12px] tracking-[0.3em] md:tracking-[0.4em] text-accent uppercase font-medium">
             {settings.aboutSub}
           </p>
         </motion.div>
-        <div className="font-kr font-light text-[15px] leading-[2.4] text-text-sub whitespace-pre-wrap max-w-[500px]">
+        <div className="font-kr font-light text-[14px] md:text-[15px] leading-[2.4] text-text-sub whitespace-pre-wrap max-w-[500px]">
           {settings.aboutBody}
         </div>
       </div>

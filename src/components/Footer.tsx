@@ -2,8 +2,8 @@ import React from 'react';
 import { Instagram, Mail, Globe } from 'lucide-react';
 
 export const Footer = ({ onAdmin }: { onAdmin?: () => void }) => (
-  <footer className="bg-[#D4E4D9] px-10 py-[60px] md:px-20 text-[#1A1A1A] mt-auto relative">
-    <div className="max-w-[1400px] mx-auto flex flex-col md:flex-row justify-between items-start md:items-center gap-12">
+  <footer className="bg-[#D4E4D9] px-6 md:px-10 py-[60px] text-[#1A1A1A] mt-auto relative">
+    <div className="max-w-[1200px] mx-auto flex flex-col md:flex-row justify-between items-start md:items-center gap-12">
       {/* Left: Symbol */}
       <div className="flex-shrink-0">
         <div className="w-8 h-8 rounded-full border border-[#1A1A1A]/30 flex items-center justify-center">

@@ -126,10 +126,10 @@ export const AdminDashboard = ({
   };
 
   return (
-    <div className="pt-[100px] px-10 pb-32 max-w-[1200px] mx-auto min-h-screen">
-      <div className="flex justify-between items-center mb-16">
-        <h1 className="font-ui text-3xl tracking-tighter font-light">관리자 대시보드</h1>
-        <div className="flex gap-8">
+    <div className="pt-[110px] md:pt-[140px] px-5 sm:px-6 md:px-10 pb-32 max-w-[1200px] mx-auto min-h-screen">
+      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6 md:gap-8 mb-12 md:mb-16">
+        <h1 className="font-ui text-xl md:text-3xl tracking-tighter font-light">관리자 대시보드</h1>
+        <div className="flex flex-wrap gap-3 md:gap-8">
           <button 
             onClick={() => setActiveTab('home')} 
             className={`font-ui text-[11px] tracking-[0.2em] transition-all ${activeTab === 'home' ? 'text-black border-b border-black pb-1' : 'text-gray-300'}`}

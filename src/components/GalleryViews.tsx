@@ -18,23 +18,23 @@ interface CategoryPageProps {
 
 export const CategoryPage = ({ type, projects, meta, onNavigate, onAdmin }: CategoryPageProps) => {
   return (
-    <div className="pt-[140px] min-h-screen flex flex-col bg-bg-white">
-      <section className="px-10 pb-20 max-w-[1200px] mx-auto w-full">
+    <div className="pt-[110px] md:pt-[140px] min-h-screen flex flex-col bg-bg-white">
+      <section className="px-6 md:px-10 pb-12 md:pb-20 max-w-[1200px] mx-auto w-full">
         <motion.div
           initial={{ opacity: 0, y: 15 }}
           animate={{ opacity: 1, y: 0 }}
           className="max-w-[500px]"
         >
-          <h2 className="font-ui text-[40px] font-light text-text-main mb-6 uppercase tracking-tight">{meta?.title}</h2>
+          <h2 className="font-ui text-[28px] md:text-[40px] font-light text-text-main mb-6 uppercase tracking-tight">{meta?.title}</h2>
           <div className="w-12 h-[1px] bg-accent mb-6" />
-          <p className="font-kr font-light text-[14px] tracking-[0.05em] leading-[2] text-text-sub">
+          <p className="font-kr font-light text-[13px] md:text-[14px] tracking-[0.05em] leading-[2] text-text-sub">
             {meta?.description}
           </p>
         </motion.div>
       </section>
 
-      <section className="px-10 pb-40 max-w-[1200px] mx-auto w-full flex-grow">
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-x-[100px] gap-y-[120px]">
+      <section className="px-6 md:px-10 pb-20 md:pb-40 max-w-[1200px] mx-auto w-full flex-grow">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-x-12 md:gap-x-[100px] gap-y-16 md:gap-y-[120px]">
           {projects.map((project, i) => (
             <motion.div
               key={project.id}
@@ -116,11 +116,11 @@ export const ProjectPage = ({ project, categoryProjects, onBack, onAdmin, onNavi
   const getSlug = (p: Project) => `${p.category}/${getProjectSlug(p.clientName)}`;
 
   return (
-    <div className="pt-[160px] min-h-screen flex flex-col bg-bg-white">
-      <section className="px-10 max-w-[1200px] mx-auto w-full mb-32">
+    <div className="pt-[140px] md:pt-[160px] min-h-screen flex flex-col bg-bg-white">
+      <section className="px-6 md:px-10 max-w-[1200px] mx-auto w-full mb-16 md:mb-32">
         <button 
           onClick={onBack}
-          className="font-ui text-[10px] tracking-[0.4em] text-text-sub hover:text-accent transition-colors mb-20 flex items-center gap-3 uppercase font-medium"
+          className="font-ui text-[10px] tracking-[0.4em] text-text-sub hover:text-accent transition-colors mb-12 md:mb-20 flex items-center gap-3 uppercase font-medium"
         >
           <ChevronLeft size={14} strokeWidth={1.5} /> BACK TO {project.category}
         </button>
@@ -129,7 +129,7 @@ export const ProjectPage = ({ project, categoryProjects, onBack, onAdmin, onNavi
           <motion.h1 
             initial={{ opacity: 0, y: 15 }}
             animate={{ opacity: 1, y: 0 }}
-            className="font-ui text-[48px] font-thin text-text-main mb-8 tracking-tighter"
+            className="font-ui text-[24px] min-[400px]:text-[32px] md:text-[48px] font-thin text-text-main mb-6 md:mb-8 tracking-tight"
           >
             {project.clientName}
           </motion.h1>
@@ -185,8 +185,8 @@ export const ProjectPage = ({ project, categoryProjects, onBack, onAdmin, onNavi
       </section>
 
       {/* Bottom Navigation */}
-      <section className="px-10 py-[60px] pb-[80px] max-w-[1300px] mx-auto w-full flex justify-end">
-        <div className="flex gap-[30px] font-ui text-[14px] text-text-sub tracking-[0.05em]">
+      <section className="px-6 md:px-10 py-[40px] md:py-[60px] pb-[60px] md:pb-[80px] max-w-[1300px] mx-auto w-full flex justify-end">
+        <div className="flex gap-[20px] md:gap-[30px] font-ui text-[12px] md:text-[14px] text-text-sub tracking-[0.05em]">
           {prevProject ? (
             <button 
               onClick={() => onNavigate(getSlug(prevProject))}

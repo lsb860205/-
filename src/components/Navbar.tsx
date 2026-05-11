@@ -20,15 +20,15 @@ export const Navbar = ({ currentPage, onNavigate }: { currentPage: Page; onNavig
   }, [isMenuOpen]);
 
   return (
-    <nav className="fixed top-0 left-0 w-full h-[70px] bg-bg-white/90 backdrop-blur-md border-b border-border z-[1000] px-10 flex items-center justify-between">
+    <nav className="fixed top-0 left-0 w-full h-[70px] bg-bg-white/90 backdrop-blur-md border-b border-border z-[1000] px-5 flex items-center justify-between">
       <div 
-        className="font-ui font-semibold text-[15px] tracking-[0.25em] cursor-pointer text-text-main"
+        className="font-ui font-semibold text-[13px] sm:text-[15px] tracking-[0.15em] sm:tracking-[0.25em] cursor-pointer text-text-main whitespace-nowrap"
         onClick={() => onNavigate('home')}
       >
         WAVELET STUDIO
       </div>
 
-      <div className="hidden md:flex gap-[40px]">
+      <div className="hidden md:flex gap-6 lg:gap-10">
         {NAV_LINKS.map((link) => (
           <button
             key={link.value}
