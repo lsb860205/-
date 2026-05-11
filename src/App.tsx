@@ -211,6 +211,52 @@ export default function App() {
     }
   };
 
+  const updateProject = async (id: string, p: Partial<Project>) => {
+    if (!user) {
+      try {
+        await signInWithPopup(auth, googleProvider);
+      } catch (err) {
+        console.error('Login failed', err);
+        return false;
+      }
+    }
+    try {
+      const { photos, ...projectData } = p;
+      
+      // 1. Update main doc
+      await setDoc(doc(db, 'projects', id), { 
+        ...projectData, 
+        photoCount: photos?.length || 0,
+        updatedAt: new Date().toISOString() 
+      }, { merge: true });
+
+      // 2. Update photos
+      if (photos) {
+        // Simple approach for portfolio: delete and recreate subcollection docs to ensure order matches exactly
+        const photosRef = collection(db, `projects/${id}/gallery`);
+        const photosSnapshot = await getDocs(photosRef);
+        
+        // Delete old
+        const deletePromises = photosSnapshot.docs.map(doc => deleteDoc(doc.ref));
+        await Promise.all(deletePromises);
+        
+        // Create new
+        const photoPromises = photos.map((url, i) => {
+          const photoId = i.toString().padStart(3, '0');
+          const photoDocRef = doc(db, `projects/${id}/gallery`, photoId);
+          return setDoc(photoDocRef, { url, order: i });
+        });
+        await Promise.all(photoPromises);
+      }
+      
+      alert('프로젝트가 수정되었습니다.');
+      return true;
+    } catch (err) {
+      handleFirestoreError(err, OperationType.WRITE, `projects/${id}`);
+      return false;
+    }
+  };
+
   const deleteProject = async (id: string) => {
     if (!user) { 
       try {
@@ -372,6 +418,7 @@ export default function App() {
                 projects={projects}
                 onSaveSettings={saveSettings}
                 onAddProject={addProject}
+                onUpdateProject={updateProject}
                 onDeleteProject={deleteProject}
                 onSeedData={seedData}
                 onLogout={() => { setIsAdminLoggedIn(false); setPassword(''); navigateTo('home'); }}
