@@ -286,6 +286,19 @@ export default function App() {
     }
   };
 
+  const reorderProjects = async (reorderedProjects: Project[]) => {
+    if (!user) return;
+    try {
+      const batch = writeBatch(db);
+      reorderedProjects.forEach((p, i) => {
+        batch.update(doc(db, 'projects', p.id), { order: i });
+      });
+      await batch.commit();
+    } catch (err) {
+      handleFirestoreError(err, OperationType.WRITE, 'projects/reorder');
+    }
+  };
+
   const seedData = async () => {
     if (!user) { 
       try {
@@ -420,6 +433,7 @@ export default function App() {
                 onAddProject={addProject}
                 onUpdateProject={updateProject}
                 onDeleteProject={deleteProject}
+                onReorderProjects={reorderProjects}
                 onSeedData={seedData}
                 onLogout={() => { setIsAdminLoggedIn(false); setPassword(''); navigateTo('home'); }}
               />

@@ -1,8 +1,9 @@
 import React, { useState, useRef } from 'react';
 import { motion } from 'motion/react';
-import { Plus, Trash2, Save, RefreshCw, X, Image as ImageIcon, Upload, Loader2, ChevronLeft } from 'lucide-react';
+import { Plus, Trash2, Save, RefreshCw, X, Image as ImageIcon, Upload, Loader2, ChevronLeft, ChevronRight, ChevronUp, ChevronDown, ExternalLink } from 'lucide-react';
 import { Project, GlobalSettings } from '../types';
 import { compressImage } from '../lib/imageUtils';
+import { getProjectSlug } from '../lib/slugUtils';
 
 interface AdminDashboardProps {
   settings: GlobalSettings;
@@ -11,6 +12,7 @@ interface AdminDashboardProps {
   onAddProject: (item: Partial<Project>) => Promise<boolean>;
   onUpdateProject: (id: string, item: Partial<Project>) => Promise<boolean>;
   onDeleteProject: (id: string) => Promise<void>;
+  onReorderProjects: (items: Project[]) => Promise<void>;
   onSeedData: () => void;
   onLogout: () => void;
 }
@@ -22,6 +24,7 @@ export const AdminDashboard = ({
   onAddProject, 
   onUpdateProject,
   onDeleteProject,
+  onReorderProjects,
   onSeedData,
   onLogout
 }: AdminDashboardProps) => {
@@ -38,6 +41,8 @@ export const AdminDashboard = ({
     mainImage: '', 
     photos: [] as string[] 
   });
+
+  const [listCategory, setListCategory] = useState<'all' | 'place' | 'food' | 'nature'>('all');
 
   const mainImageInputRef = useRef<HTMLInputElement>(null);
   const galleryPhotosInputRef = useRef<HTMLInputElement>(null);
@@ -149,6 +154,32 @@ export const AdminDashboard = ({
       newPhotos[targetIndex] = temp;
       return { ...prev, photos: newPhotos };
     });
+  };
+
+  const filteredDisplayProjects = projects.filter(p => listCategory === 'all' || p.category === listCategory);
+
+  const moveProject = (e: React.MouseEvent, index: number, direction: 'up' | 'down') => {
+    e.stopPropagation();
+    const targetIndex = direction === 'up' ? index - 1 : index + 1;
+    
+    if (targetIndex < 0 || targetIndex >= filteredDisplayProjects.length) return;
+    
+    // Create a copy of the entire project list to update orders
+    const newGlobalProjects = [...projects];
+    const p1 = filteredDisplayProjects[index];
+    const p2 = filteredDisplayProjects[targetIndex];
+    
+    const idx1 = newGlobalProjects.findIndex(p => p.id === p1.id);
+    const idx2 = newGlobalProjects.findIndex(p => p.id === p2.id);
+    
+    // Swap order values
+    const tempOrder = newGlobalProjects[idx1].order;
+    newGlobalProjects[idx1].order = newGlobalProjects[idx2].order;
+    newGlobalProjects[idx2].order = tempOrder;
+
+    // Sort to ensure batch update will result in correct final order state
+    newGlobalProjects.sort((a, b) => a.order - b.order);
+    onReorderProjects(newGlobalProjects);
   };
 
   const handleEditProject = (project: Project) => {
@@ -397,10 +428,10 @@ export const AdminDashboard = ({
                 </div>
                 
                 <div className="flex flex-col gap-2">
-                  <label className="font-ui text-[10px] tracking-widest uppercase text-gray-400">대표 메인 이미지</label>
+                  <label className="font-ui text-[10px] tracking-widest uppercase text-gray-400">대표 메인 이미지 (4:5 비율 추천)</label>
                   <div 
                     onClick={() => mainImageInputRef.current?.click()}
-                    className="relative aspect-video bg-bg-white border-2 border-dashed border-border flex flex-col items-center justify-center cursor-pointer group hover:border-black transition-colors overflow-hidden"
+                    className="relative aspect-[4/5] max-w-[200px] bg-bg-white border-2 border-dashed border-border flex flex-col items-center justify-center cursor-pointer group hover:border-black transition-colors overflow-hidden mx-auto md:mx-0"
                   >
                     {projectForm.mainImage ? (
                       <img src={projectForm.mainImage} className="w-full h-full object-cover group-hover:opacity-40 transition-opacity" />
@@ -456,7 +487,7 @@ export const AdminDashboard = ({
                       <div className="absolute inset-0 bg-black/40 flex flex-col items-center justify-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
                         <div className="flex gap-1">
                           <button 
-                            onClick={() => movePhoto(i, 'left')}
+                            onClick={(e) => { e.stopPropagation(); movePhoto(i, 'left'); }}
                             disabled={i === 0}
                             className="bg-white/90 p-1.5 text-black hover:bg-white disabled:opacity-30 rounded-sm"
                             title="왼쪽으로 이동"
@@ -464,16 +495,16 @@ export const AdminDashboard = ({
                             <ChevronLeft size={14} />
                           </button>
                           <button 
-                            onClick={() => movePhoto(i, 'right')}
+                            onClick={(e) => { e.stopPropagation(); movePhoto(i, 'right'); }}
                             disabled={i === projectForm.photos.length - 1}
                             className="bg-white/90 p-1.5 text-black hover:bg-white disabled:opacity-30 rounded-sm"
                             title="오른쪽으로 이동"
                           >
-                            <ChevronLeft size={14} className="rotate-180" />
+                            <ChevronRight size={14} />
                           </button>
                         </div>
                         <button 
-                          onClick={() => removePhoto(i)}
+                          onClick={(e) => { e.stopPropagation(); removePhoto(i); }}
                           className="bg-red-500/90 p-1.5 text-white hover:bg-red-600 rounded-sm"
                           title="삭제"
                         >
@@ -522,27 +553,73 @@ export const AdminDashboard = ({
           </div>
 
           {/* Project List */}
-          <div className="space-y-6">
-            <h3 className="font-ui text-xs tracking-widest text-black uppercase font-bold px-1">기존 프로젝트 목록 (클릭하여 수정)</h3>
+          <div className="space-y-8">
+            <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+              <h3 className="font-ui text-xs tracking-widest text-black uppercase font-bold px-1">기존 프로젝트 목록 (클릭하여 수정)</h3>
+              
+              <div className="flex gap-1 bg-bg-warm p-1 rounded-sm border border-border/30">
+                {(['all', 'place', 'food', 'nature'] as const).map(cat => (
+                  <button 
+                    key={cat}
+                    onClick={() => setListCategory(cat)}
+                    className={`px-4 py-1.5 font-ui text-[9px] tracking-widest uppercase transition-all ${listCategory === cat ? 'bg-black text-white shadow-sm' : 'text-text-sub hover:text-black'}`}
+                  >
+                    {cat}
+                  </button>
+                ))}
+              </div>
+            </div>
+
             <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-8">
-              {projects.map(project => (
+              {filteredDisplayProjects.map((project, idx) => (
                 <div 
                   key={project.id} 
                   onClick={() => handleEditProject(project)}
-                  className={`border p-6 space-y-4 group transition-all duration-300 bg-bg-white shadow-sm cursor-pointer ${editingId === project.id ? 'border-black ring-1 ring-black scale-[1.02]' : 'border-border hover:border-gray-400'}`}
+                  className={`border p-6 space-y-4 group transition-all duration-300 bg-bg-white shadow-sm cursor-pointer relative ${editingId === project.id ? 'border-black ring-1 ring-black scale-[1.02]' : 'border-border hover:border-gray-400'}`}
                 >
                   <div className="aspect-[4/5] bg-bg-warm overflow-hidden relative">
                     <img src={project.mainImage} className="w-full h-full object-cover grayscale group-hover:grayscale-0 transition-all duration-700" />
-                    <div className="absolute top-4 right-4 flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                    <div className="absolute inset-0 bg-black/0 group-hover:bg-black/5 transition-colors flex items-center justify-center pointer-events-none">
+                      <span className="font-ui text-[10px] tracking-widest text-white opacity-0 group-hover:opacity-100 uppercase bg-black/40 px-4 py-2 backdrop-blur-sm">Click to Edit</span>
+                    </div>
+                    
+                    {/* Action Buttons */}
+                    <div className="absolute top-4 right-4 flex flex-col gap-2 opacity-0 group-hover:opacity-100 transition-opacity z-10">
                       <button 
                         onClick={(e) => { e.stopPropagation(); onDeleteProject(project.id); }}
                         className="bg-white/90 p-2 text-gray-400 hover:text-red-500 transition-colors shadow-sm rounded-sm"
+                        title="Delete"
                       >
                         <Trash2 size={18} />
                       </button>
-                    </div>
-                    <div className="absolute inset-0 bg-black/0 group-hover:bg-black/5 transition-colors flex items-center justify-center">
-                      <span className="font-ui text-[10px] tracking-widest text-white opacity-0 group-hover:opacity-100 uppercase bg-black/40 px-4 py-2 backdrop-blur-sm">Click to Edit</span>
+                      <a 
+                        href={`#${project.category}/${getProjectSlug(project.clientName)}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        onClick={(e) => e.stopPropagation()}
+                        className="bg-white/90 p-2 text-gray-400 hover:text-black transition-colors shadow-sm rounded-sm flex items-center justify-center"
+                        title="View on Site"
+                      >
+                        <ExternalLink size={18} />
+                      </a>
+                      <div className="flex flex-col gap-1">
+                        <button 
+                          disabled={idx === 0}
+                          onClick={(e) => moveProject(e, idx, 'up')}
+                          className="bg-white/90 p-2 text-gray-400 hover:text-black transition-colors shadow-sm rounded-sm disabled:opacity-20"
+                          title="Move Up"
+                        >
+                          <ChevronUp size={18} />
+                        </button>
+                        <button 
+                          disabled={idx === filteredDisplayProjects.length - 1}
+                          onClick={(e) => moveProject(e, idx, 'down')}
+                          className="bg-white/90 p-2 text-gray-400 hover:text-black transition-colors shadow-sm rounded-sm disabled:opacity-20"
+                          title="Move Down"
+                        >
+                          <ChevronDown size={18} />
+                        </button>
+                      </div>
                     </div>
                   </div>
                   <div>
@@ -554,6 +631,11 @@ export const AdminDashboard = ({
                   </div>
                 </div>
               ))}
+              {filteredDisplayProjects.length === 0 && (
+                <div className="col-span-full py-20 text-center border-2 border-dashed border-border rounded-sm bg-bg-warm">
+                  <p className="font-ui text-[10px] tracking-widest text-text-sub uppercase">해당 카테고리에 프로젝트가 없습니다.</p>
+                </div>
+              )}
             </div>
           </div>
         </motion.div>
