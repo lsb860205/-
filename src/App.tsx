@@ -191,17 +191,16 @@ export default function App() {
         createdAt: new Date().toISOString() 
       });
 
-      // 2. Create photos in subcollection (max 1MB each document, but 1 Doc per photo is safe)
+      // 2. Create photos in subcollection
+      // We avoid writeBatch here because 20+ photos as Base64 (600KB+ each) 
+      // can easily exceed the 10MB transaction size limit of a single batch.
       if (photos && photos.length > 0) {
-        const batch = writeBatch(db);
-        // We use batch for first 500, but usually portfolios have fewer. 
-        // For safety, let's just do sequential or map if many.
-        for (let i = 0; i < photos.length; i++) {
+        const photoPromises = photos.map((url, i) => {
           const photoId = i.toString().padStart(3, '0');
           const photoDocRef = doc(db, `projects/${id}/gallery`, photoId);
-          batch.set(photoDocRef, { url: photos[i], order: i });
-        }
-        await batch.commit();
+          return setDoc(photoDocRef, { url, order: i });
+        });
+        await Promise.all(photoPromises);
       }
       
       alert('프로젝트가 성공적으로 생성되었습니다.');
@@ -226,13 +225,15 @@ export default function App() {
         // 1. Delete subcollection photos first
         const photosRef = collection(db, `projects/${id}/gallery`);
         const photosSnapshot = await getDocs(photosRef);
-        const batch = writeBatch(db);
-        photosSnapshot.docs.forEach(doc => batch.delete(doc.ref));
+        
+        // Delete all photos concurrently
+        const deletePromises = photosSnapshot.docs.map(doc => deleteDoc(doc.ref));
+        await Promise.all(deletePromises);
         
         // 2. Delete main doc
-        batch.delete(doc(db, 'projects', id));
+        await deleteDoc(doc(db, 'projects', id));
         
-        await batch.commit();
+        alert('프로젝트가 삭제되었습니다.');
       } catch (err) {
         handleFirestoreError(err, OperationType.DELETE, `projects/${id}`);
       }

@@ -1,6 +1,6 @@
 import React, { useState, useRef } from 'react';
 import { motion } from 'motion/react';
-import { Plus, Trash2, Save, RefreshCw, X, Image as ImageIcon, Upload, Loader2 } from 'lucide-react';
+import { Plus, Trash2, Save, RefreshCw, X, Image as ImageIcon, Upload, Loader2, ChevronLeft } from 'lucide-react';
 import { Project, GlobalSettings } from '../types';
 import { compressImage } from '../lib/imageUtils';
 
@@ -123,6 +123,19 @@ export const AdminDashboard = ({
 
   const removePhoto = (index: number) => {
     setNewProject(prev => ({ ...prev, photos: prev.photos.filter((_, i) => i !== index) }));
+  };
+
+  const movePhoto = (index: number, direction: 'left' | 'right') => {
+    setNewProject(prev => {
+      const newPhotos = [...prev.photos];
+      const targetIndex = direction === 'left' ? index - 1 : index + 1;
+      if (targetIndex < 0 || targetIndex >= newPhotos.length) return prev;
+      
+      const temp = newPhotos[index];
+      newPhotos[index] = newPhotos[targetIndex];
+      newPhotos[targetIndex] = temp;
+      return { ...prev, photos: newPhotos };
+    });
   };
 
   return (
@@ -379,20 +392,41 @@ export const AdminDashboard = ({
                   />
                 </div>
                 
-                <div className="grid grid-cols-4 gap-2 max-h-[400px] overflow-y-auto pr-2">
+                <div className="grid grid-cols-2 min-[400px]:grid-cols-3 sm:grid-cols-4 gap-2 max-h-[400px] overflow-y-auto pr-2">
                   {newProject.photos.map((url, i) => (
-                    <div key={i} className="relative aspect-square group bg-bg-white border border-border">
+                    <div key={i} className="relative aspect-square group bg-bg-white border border-border overflow-hidden">
                       <img src={url} className="w-full h-full object-cover" />
-                      <button 
-                        onClick={() => removePhoto(i)}
-                        className="absolute inset-0 bg-red-500/80 text-white flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
-                      >
-                        <Trash2 size={16} />
-                      </button>
+                      <div className="absolute inset-0 bg-black/40 flex flex-col items-center justify-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                        <div className="flex gap-1">
+                          <button 
+                            onClick={() => movePhoto(i, 'left')}
+                            disabled={i === 0}
+                            className="bg-white/90 p-1.5 text-black hover:bg-white disabled:opacity-30 rounded-sm"
+                            title="왼쪽으로 이동"
+                          >
+                            <ChevronLeft size={14} />
+                          </button>
+                          <button 
+                            onClick={() => movePhoto(i, 'right')}
+                            disabled={i === newProject.photos.length - 1}
+                            className="bg-white/90 p-1.5 text-black hover:bg-white disabled:opacity-30 rounded-sm"
+                            title="오른쪽으로 이동"
+                          >
+                            <ChevronLeft size={14} className="rotate-180" />
+                          </button>
+                        </div>
+                        <button 
+                          onClick={() => removePhoto(i)}
+                          className="bg-red-500/90 p-1.5 text-white hover:bg-red-600 rounded-sm"
+                          title="삭제"
+                        >
+                          <Trash2 size={14} />
+                        </button>
+                      </div>
                     </div>
                   ))}
                   {newProject.photos.length === 0 && (
-                    <div className="col-span-4 aspect-video border border-dashed border-border flex items-center justify-center text-gray-200">
+                    <div className="col-span-full aspect-video border border-dashed border-border flex items-center justify-center text-gray-200">
                       <ImageIcon size={40} strokeWidth={1} />
                     </div>
                   )}
