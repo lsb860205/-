@@ -317,7 +317,7 @@ export default function App() {
       
       <motion.div
         animate={{ 
-          x: isMenuOpen ? (window.innerWidth < 640 ? '75%' : '320px') : 0,
+          x: isMenuOpen ? (window.innerWidth < 640 ? '75%' : window.innerWidth < 1024 ? '320px' : 0) : 0,
           scale: isMenuOpen ? 0.98 : 1,
           opacity: isMenuOpen ? 0.6 : 1
         }}

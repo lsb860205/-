@@ -158,8 +158,8 @@ export const ProjectPage = ({ project, categoryProjects, onBack, onAdmin, onNavi
           <div className="grid grid-cols-12 gap-5 md:gap-8">
             {photos.map((photo, i) => {
               let gridClasses = "col-span-12"; 
-              if (i % 5 === 1 || i % 5 === 2) gridClasses = "col-span-12 md:col-span-6";
-              if (i % 5 === 3) gridClasses = "col-span-12 md:col-span-8 md:col-start-3";
+              if (i % 5 === 1 || i % 5 === 2) gridClasses = "col-span-12 sm:col-span-6";
+              if (i % 5 === 3) gridClasses = "col-span-12 md:col-span-10 md:col-start-2 lg:col-span-8 lg:col-start-3";
               if (i % 5 === 4) gridClasses = "col-span-12 md:col-span-10 md:col-start-2";
 
               return (

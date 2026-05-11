@@ -26,7 +26,7 @@ export const Navbar = ({ currentPage, onNavigate, isMenuOpen, setIsMenuOpen }: {
         WAVELET STUDIO
       </div>
 
-      <div className="hidden md:flex gap-4 lg:gap-10">
+      <div className="hidden lg:flex gap-4 lg:gap-10">
         {NAV_LINKS.map((link) => (
           <button
             key={link.value}
@@ -47,7 +47,7 @@ export const Navbar = ({ currentPage, onNavigate, isMenuOpen, setIsMenuOpen }: {
       </div>
 
       <button 
-        className="md:hidden flex items-center gap-2 p-2 -mr-2" 
+        className="lg:hidden flex items-center gap-2 p-2 -mr-2" 
         onClick={(e) => { e.stopPropagation(); setIsMenuOpen(!isMenuOpen); }}
       >
         <span className="font-ui text-[10px] tracking-widest text-text-main font-medium uppercase">
@@ -63,7 +63,7 @@ export const Navbar = ({ currentPage, onNavigate, isMenuOpen, setIsMenuOpen }: {
             animate={{ x: 0 }}
             exit={{ x: '-100%' }}
             transition={{ type: 'spring', damping: 25, stiffness: 200 }}
-            className="fixed inset-y-0 left-0 w-[75%] sm:w-[320px] bg-bg-white z-[999] flex flex-col p-6 pt-24 shadow-xl border-r border-border/50"
+            className="fixed inset-y-0 left-0 w-[75%] sm:w-[320px] md:w-[360px] bg-bg-white z-[999] flex flex-col p-6 pt-24 shadow-xl border-r border-border/50"
             onClick={(e) => e.stopPropagation()}
           >
             <div className="flex flex-col gap-2">
