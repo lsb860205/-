@@ -266,23 +266,23 @@ export default function App() {
         return;
       }
     }
-    if (confirm('프로젝트를 삭제하시겠습니까?')) {
-      try {
-        // 1. Delete subcollection photos first
-        const photosRef = collection(db, `projects/${id}/gallery`);
-        const photosSnapshot = await getDocs(photosRef);
-        
-        // Delete all photos concurrently
-        const deletePromises = photosSnapshot.docs.map(doc => deleteDoc(doc.ref));
-        await Promise.all(deletePromises);
-        
-        // 2. Delete main doc
-        await deleteDoc(doc(db, 'projects', id));
-        
-        alert('프로젝트가 삭제되었습니다.');
-      } catch (err) {
-        handleFirestoreError(err, OperationType.DELETE, `projects/${id}`);
-      }
+    
+    try {
+      // 1. Delete subcollection photos first
+      const photosRef = collection(db, `projects/${id}/gallery`);
+      const photosSnapshot = await getDocs(photosRef);
+      
+      // Delete all photos concurrently
+      const deletePromises = photosSnapshot.docs.map(doc => deleteDoc(doc.ref));
+      await Promise.all(deletePromises);
+      
+      // 2. Delete main doc
+      await deleteDoc(doc(db, 'projects', id));
+      
+      // No alert here, the UI will reflect deletion automatically via onSnapshot
+    } catch (err) {
+      handleFirestoreError(err, OperationType.DELETE, `projects/${id}`);
+      alert('삭제 중 오류가 발생했습니다.');
     }
   };
 
@@ -290,12 +290,16 @@ export default function App() {
     if (!user) return;
     try {
       const batch = writeBatch(db);
+      // Ensure we only update docs that exist and have an ID
       reorderedProjects.forEach((p, i) => {
-        batch.update(doc(db, 'projects', p.id), { order: i });
+        if (p.id && !p.id.startsWith('dummy')) {
+          batch.update(doc(db, 'projects', p.id), { order: i });
+        }
       });
       await batch.commit();
     } catch (err) {
       handleFirestoreError(err, OperationType.WRITE, 'projects/reorder');
+      alert('순서 저장 중 오류가 발생했습니다.');
     }
   };
 

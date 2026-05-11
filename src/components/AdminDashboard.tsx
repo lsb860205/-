@@ -160,41 +160,72 @@ export const AdminDashboard = ({
 
   const moveProject = (e: React.MouseEvent, category: string, index: number, direction: 'up' | 'down') => {
     e.stopPropagation();
-    const categoryProjects = projects.filter(p => p.category === category).sort((a, b) => (a.order || 0) - (b.order || 0));
+    
+    // 1. Get all projects in this category, properly sorted
+    const catProjects = [...projects]
+      .filter(p => p.category === category)
+      .sort((a, b) => (a.order ?? 0) - (b.order ?? 0));
+    
     const targetIndex = direction === 'up' ? index - 1 : index + 1;
+    if (targetIndex < 0 || targetIndex >= catProjects.length) return;
     
-    if (targetIndex < 0 || targetIndex >= categoryProjects.length) return;
+    // 2. Perform the swap in the localized category list
+    const newCatProjects = [...catProjects];
+    const temp = newCatProjects[index];
+    newCatProjects[index] = newCatProjects[targetIndex];
+    newCatProjects[targetIndex] = temp;
     
-    // We want to swap the 'order' field of these two specific projects
-    const p1 = categoryProjects[index];
-    const p2 = categoryProjects[targetIndex];
+    // 3. Reconstruct the global list with updated orders
+    // We update the order of EVERYTHING to be safe and sequential
+    const otherProjects = projects.filter(p => p.category !== category);
     
-    // In our global projects list, we find their actual instances
-    const newProjects = [...projects].sort((a, b) => (a.order || 0) - (b.order || 0));
-    const globalIdx1 = newProjects.findIndex(p => p.id === p1.id);
-    const globalIdx2 = newProjects.findIndex(p => p.id === p2.id);
+    // Merge back and normalize ALL orders 0, 1, 2, ...
+    // Note: We keep the relative order of other categories as they were
+    const merged = [...otherProjects, ...newCatProjects].sort((a, b) => {
+      // If categories are same, use the newCatProjects order implicitly by how we merged
+      // But to be safe, we'll just map them to guaranteed sequential integers
+      return (a.order ?? 0) - (b.order ?? 0);
+    });
 
-    if (globalIdx1 !== -1 && globalIdx2 !== -1) {
-      const tempOrder = newProjects[globalIdx1].order;
-      newProjects[globalIdx1].order = newProjects[globalIdx2].order;
-      newProjects[globalIdx2].order = tempOrder;
+    // Final result: all projects get a new 0-indexed order based on their new relative positions
+    const finalProjects = [...projects];
+    // Create a mapping of ID -> newOrder
+    // First, let's just update the target category's relative positions in a new copy of projects
+    const reorderedGlobal = [...projects].sort((a, b) => (a.order ?? 0) - (b.order ?? 0));
+    
+    // Find p1 and p2 in the global list
+    const p1 = catProjects[index];
+    const p2 = catProjects[targetIndex];
+    
+    const gIdx1 = reorderedGlobal.findIndex(p => p.id === p1.id);
+    const gIdx2 = reorderedGlobal.findIndex(p => p.id === p2.id);
+    
+    if (gIdx1 !== -1 && gIdx2 !== -1) {
+      const tempItem = reorderedGlobal[gIdx1];
+      reorderedGlobal[gIdx1] = reorderedGlobal[gIdx2];
+      reorderedGlobal[gIdx2] = tempItem;
       
-      // Update all to ensure consistency if needed, but switching two is usually enough
-      onReorderProjects(newProjects);
+      // Now re-assign sequential orders to everyone to avoid collisions
+      const sequential = reorderedGlobal.map((p, i) => ({ ...p, order: i }));
+      onReorderProjects(sequential);
     }
   };
 
-  const handleDeleteClick = (e: React.MouseEvent, id: string) => {
+  const handleDeleteClick = (e: React.MouseEvent, project: Project) => {
     e.stopPropagation();
-    setDeleteConfirmId(id);
+    if (project.id.startsWith('dummy')) {
+      alert('샘플 데이터는 삭제할 수 없습니다. "초기 데이터 생성"을 눌러 실제 데이터를 먼저 만들어주세요.');
+      return;
+    }
+    setDeleteConfirmId(project.id);
   };
 
-  const confirmDelete = (e: React.MouseEvent) => {
+  const confirmDelete = async (e: React.MouseEvent) => {
     e.stopPropagation();
     if (deleteConfirmId) {
-      onDeleteProject(deleteConfirmId).then(() => {
-        setDeleteConfirmId(null);
-      });
+      const idToDelete = deleteConfirmId;
+      setDeleteConfirmId(null); // Close overlay first for better UX
+      await onDeleteProject(idToDelete);
     }
   };
 
@@ -597,7 +628,7 @@ export const AdminDashboard = ({
                           {/* Always visible header for projects for quick actions */}
                           <div className="absolute top-2 right-2 flex flex-col gap-1.5 opacity-0 group-hover:opacity-100 transition-opacity z-20">
                             <button 
-                              onClick={(e) => handleDeleteClick(e, project.id)}
+                              onClick={(e) => handleDeleteClick(e, project)}
                               className="bg-red-500 text-white p-2 rounded-sm shadow-sm hover:bg-red-600 transition-colors"
                               title="삭제"
                             >
