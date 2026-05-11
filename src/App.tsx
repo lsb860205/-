@@ -413,7 +413,7 @@ const HomeView = ({ settings, onNavigate, allProjects }: any) => {
             initial={{ y: 20, opacity: 0 }} 
             animate={{ y: 0, opacity: 1 }} 
             transition={{ delay: 0.5, duration: 1.2 }}
-            className="font-ui text-[24px] min-[320px]:text-[28px] min-[400px]:text-[36px] md:text-[60px] lg:text-[80px] font-thin tracking-normal leading-[1.2] md:leading-none mb-6 px-4 max-w-[900px] mx-auto overflow-hidden whitespace-normal break-words"
+            className="font-ui text-[22px] min-[380px]:text-[28px] md:text-[60px] lg:text-[80px] font-thin tracking-normal leading-[1.2] md:leading-tight mb-8 px-5 max-w-[95%] mx-auto whitespace-normal break-words"
           >
             {settings.homeHeadline}
           </motion.h1>
