@@ -129,7 +129,7 @@ export const ProjectPage = ({ project, categoryProjects, onBack, onAdmin, onNavi
           <motion.h1 
             initial={{ opacity: 0, y: 15 }}
             animate={{ opacity: 1, y: 0 }}
-            className="font-ui text-[24px] min-[400px]:text-[32px] md:text-[48px] font-thin text-text-main mb-6 md:mb-8 tracking-tight"
+            className="font-ui text-[24px] min-[400px]:text-[32px] md:text-[48px] font-thin text-text-main mb-6 md:mb-8 tracking-tight text-balance"
           >
             {project.clientName}
           </motion.h1>

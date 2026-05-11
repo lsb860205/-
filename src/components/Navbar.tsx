@@ -55,43 +55,46 @@ export const Navbar = ({ currentPage, onNavigate }: { currentPage: Page; onNavig
       <AnimatePresence>
         {isMenuOpen && (
           <motion.div
-            initial={{ opacity: 0, x: '100%' }}
+            initial={{ opacity: 0, x: '100vw' }}
             animate={{ opacity: 1, x: 0 }}
-            exit={{ opacity: 0, x: '100%' }}
-            transition={{ type: 'spring', damping: 25, stiffness: 200 }}
-            className="fixed inset-0 bg-white z-[2000] flex flex-col p-8"
+            exit={{ opacity: 0, x: '100vw' }}
+            transition={{ type: 'tween', duration: 0.35, ease: 'easeOut' }}
+            className="fixed inset-0 bg-white z-[2001] flex flex-col px-8 py-12 overflow-y-auto"
+            style={{ backgroundColor: '#ffffff' }}
           >
-            <div className="flex justify-between items-center mb-16">
-              <div className="font-ui font-semibold text-[13px] tracking-[0.15em] text-text-main">WAVELET STUDIO</div>
-              <button onClick={() => setIsMenuOpen(false)}>
-                <X size={24} className="text-text-main" />
+            <div className="flex justify-between items-center mb-16 flex-shrink-0">
+              <div className="font-ui font-semibold text-[12px] tracking-[0.15em] text-text-main uppercase">WAVELET STUDIO</div>
+              <button onClick={() => setIsMenuOpen(false)} className="p-2 -mr-2">
+                <X size={20} className="text-text-main" />
               </button>
             </div>
-            <div className="flex flex-col gap-6">
-              {NAV_LINKS.map((link) => (
-                <button
+            
+            <div className="flex flex-col space-y-6">
+              {NAV_LINKS.map((link, index) => (
+                <motion.button
                   key={link.value}
+                  initial={{ opacity: 0, x: 20 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  transition={{ delay: 0.1 + index * 0.05 }}
                   onClick={() => {
                     onNavigate(link.value);
                     setIsMenuOpen(false);
                   }}
-                  className={`font-ui text-[28px] text-left font-thin tracking-tight ${
-                    currentPage === link.value ? 'text-text-main' : 'text-text-sub'
+                  className={`font-ui text-[18px] text-left font-light tracking-[0.05em] py-2 flex items-baseline gap-4 ${
+                    currentPage === link.value ? 'text-text-main' : 'text-text-sub opacity-60'
                   }`}
                 >
-                  <span className="opacity-30 text-[12px] tracking-widest mr-4 inline-block transform -translate-y-2">
-                    0{NAV_LINKS.findIndex(l => l.value === link.value) + 1}
+                  <span className="text-[10px] tracking-widest font-medium opacity-40">
+                    0{index + 1}
                   </span>
                   {link.label}
-                </button>
+                </motion.button>
               ))}
             </div>
-            <div className="mt-auto pt-10 border-t border-border flex flex-col gap-4">
-              <div className="font-ui text-[10px] tracking-widest text-text-sub">CONTACT</div>
-              <div className="font-kr text-[13px] text-text-main">lsb860205@gmail.com</div>
-              <div className="flex gap-4 mt-2">
-                <div className="w-10 h-[1px] bg-accent" />
-              </div>
+
+            <div className="mt-auto pt-10 flex items-center gap-4">
+              <div className="w-8 h-[1px] bg-accent/30" />
+              <div className="font-ui text-[9px] tracking-[0.2em] text-text-sub uppercase">Jeju Island</div>
             </div>
           </motion.div>
         )}

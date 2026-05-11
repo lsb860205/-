@@ -413,7 +413,7 @@ const HomeView = ({ settings, onNavigate, allProjects }: any) => {
             initial={{ y: 20, opacity: 0 }} 
             animate={{ y: 0, opacity: 1 }} 
             transition={{ delay: 0.5, duration: 1.2 }}
-            className="font-ui text-[22px] min-[380px]:text-[28px] md:text-[60px] lg:text-[80px] font-thin tracking-normal leading-[1.2] md:leading-tight mb-8 px-5 max-w-[95%] mx-auto whitespace-normal break-words"
+            className="font-ui text-[20px] min-[360px]:text-[24px] min-[400px]:text-[32px] md:text-[54px] lg:text-[72px] font-thin tracking-normal leading-[1.3] md:leading-[1.1] mb-8 px-5 max-w-[1200px] mx-auto whitespace-normal break-words text-balance"
           >
             {settings.homeHeadline}
           </motion.h1>
@@ -474,7 +474,7 @@ const AboutView = ({ settings, onNavigate }: any) => (
     <section className="px-6 md:px-10 grid md:grid-cols-2 gap-16 md:gap-24 max-w-[1200px] mx-auto mb-20 md:mb-40 items-center">
       <div className="space-y-8 md:space-y-12">
         <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}>
-          <h1 className="font-ui text-[32px] min-[400px]:text-[48px] md:text-[60px] text-text-main font-thin tracking-tight mb-4">
+          <h1 className="font-ui text-[32px] min-[400px]:text-[48px] md:text-[60px] text-text-main font-thin tracking-tight mb-4 text-balance">
             {settings.aboutHeadline}
           </h1>
           <p className="font-ui text-[10px] md:text-[12px] tracking-[0.3em] md:tracking-[0.4em] text-accent uppercase font-medium">
