@@ -185,22 +185,22 @@ export const ProjectPage = ({ project, categoryProjects, onBack, onAdmin, onNavi
       </section>
 
       {/* Bottom Navigation */}
-      <section className="px-6 md:px-10 py-[40px] md:py-[60px] pb-[60px] md:pb-[80px] max-w-[1300px] mx-auto w-full flex justify-end">
-        <div className="flex gap-[20px] md:gap-[30px] font-ui text-[12px] md:text-[14px] text-text-sub tracking-[0.05em]">
+      <section className="px-6 md:px-10 py-[40px] md:py-[60px] pb-[80px] md:pb-[100px] max-w-[1300px] mx-auto w-full flex justify-end">
+        <div className="flex items-center gap-1 md:gap-[30px] font-ui text-[12px] md:text-[14px] text-text-sub tracking-[0.05em]">
           {prevProject ? (
             <button 
               onClick={() => onNavigate(getSlug(prevProject))}
-              className="hover:text-accent transition-colors"
+              className="px-4 py-3 hover:text-accent transition-colors flex items-center"
             >
               ← before
             </button>
           ) : (
-            <span className="opacity-20 cursor-default">← before</span>
+            <span className="px-4 py-3 opacity-20 cursor-default">← before</span>
           )}
 
           <button 
             onClick={onBack}
-            className="hover:text-accent transition-colors underline underline-offset-4 decoration-text-sub/20"
+            className="px-6 py-3 hover:text-accent transition-colors underline underline-offset-4 decoration-text-sub/20 font-medium"
           >
             index
           </button>
@@ -208,12 +208,12 @@ export const ProjectPage = ({ project, categoryProjects, onBack, onAdmin, onNavi
           {nextProject ? (
             <button 
               onClick={() => onNavigate(getSlug(nextProject))}
-              className="hover:text-accent transition-colors"
+              className="px-4 py-3 hover:text-accent transition-colors flex items-center"
             >
               next →
             </button>
           ) : (
-            <span className="opacity-20 cursor-default">next →</span>
+            <span className="px-4 py-3 opacity-20 cursor-default">next →</span>
           )}
         </div>
       </section>

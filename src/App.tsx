@@ -70,6 +70,7 @@ const DUMMY_PROJECTS = generateDummyProjects();
 export default function App() {
   const [currentPage, setCurrentPage] = useState<Page>('home');
   const [currentProjectSlug, setCurrentProjectSlug] = useState<string | null>(null);
+  const [isMenuOpen, setIsMenuOpen] = useState(false);
   
   const [isAdminLoggedIn, setIsAdminLoggedIn] = useState(false);
   const [password, setPassword] = useState('');
@@ -306,62 +307,78 @@ export default function App() {
   }
 
   return (
-    <div className="bg-bg-white text-black font-sans selection:bg-black selection:text-white">
-      <Navbar currentPage={currentPage} onNavigate={navigateTo} />
+    <div className="bg-bg-white text-black font-sans selection:bg-black selection:text-white min-h-screen overflow-x-hidden">
+      <Navbar 
+        currentPage={currentPage} 
+        onNavigate={navigateTo} 
+        isMenuOpen={isMenuOpen}
+        setIsMenuOpen={setIsMenuOpen}
+      />
       
-      <AnimatePresence mode="wait">
-        <motion.div
-          key={`${currentPage}-${currentProjectSlug}`}
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          exit={{ opacity: 0 }}
-          transition={{ duration: 0.5 }}
-        >
-          {currentPage === 'home' && (
-            <HomeView 
-              settings={settings} 
-              onNavigate={navigateTo} 
-              allProjects={displayProjects} 
-            />
-          )}
-
-          {['place', 'food', 'nature'].includes(currentPage) && (
-            activeProject ? (
-              <ProjectPage 
-                project={activeProject} 
-                categoryProjects={displayProjects.filter(p => p.category === currentPage)}
-                onBack={() => navigateTo(currentPage)} 
-                onAdmin={() => navigateTo('admin')}
-                onNavigate={navigateTo}
+      <motion.div
+        animate={{ 
+          x: isMenuOpen ? (window.innerWidth < 640 ? '75%' : '320px') : 0,
+          scale: isMenuOpen ? 0.98 : 1,
+          opacity: isMenuOpen ? 0.6 : 1
+        }}
+        transition={{ type: 'spring', damping: 25, stiffness: 200 }}
+        className="min-h-screen"
+        onClick={() => { if (isMenuOpen) setIsMenuOpen(false); }}
+      >
+        <AnimatePresence mode="wait">
+          <motion.div
+            key={`${currentPage}-${currentProjectSlug}`}
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.5 }}
+          >
+            {currentPage === 'home' && (
+              <HomeView 
+                settings={settings} 
+                onNavigate={navigateTo} 
+                allProjects={displayProjects} 
               />
-            ) : (
-              <CategoryPage 
-                type={currentPage}
-                projects={displayProjects.filter(p => p.category === currentPage)}
-                meta={CATEGORY_META[currentPage as keyof typeof CATEGORY_META]}
-                onNavigate={navigateTo}
-                onAdmin={() => navigateTo('admin')}
+            )}
+
+            {['place', 'food', 'nature'].includes(currentPage) && (
+              activeProject ? (
+                <ProjectPage 
+                  project={activeProject} 
+                  categoryProjects={displayProjects.filter(p => p.category === currentPage)}
+                  onBack={() => navigateTo(currentPage)} 
+                  onAdmin={() => navigateTo('admin')}
+                  onNavigate={navigateTo}
+                />
+              ) : (
+                <CategoryPage 
+                  type={currentPage}
+                  projects={displayProjects.filter(p => p.category === currentPage)}
+                  meta={CATEGORY_META[currentPage as keyof typeof CATEGORY_META]}
+                  onNavigate={navigateTo}
+                  onAdmin={() => navigateTo('admin')}
+                />
+              )
+            )}
+
+            {currentPage === 'about' && (
+              <AboutView settings={settings} onNavigate={navigateTo} />
+            )}
+
+            {currentPage === 'admin' && (
+              <AdminDashboard 
+                settings={settings}
+                projects={projects}
+                onSaveSettings={saveSettings}
+                onAddProject={addProject}
+                onDeleteProject={deleteProject}
+                onSeedData={seedData}
+                onLogout={() => { setIsAdminLoggedIn(false); setPassword(''); navigateTo('home'); }}
               />
-            )
-          )}
-
-          {currentPage === 'about' && (
-            <AboutView settings={settings} onNavigate={navigateTo} />
-          )}
-
-          {currentPage === 'admin' && (
-            <AdminDashboard 
-              settings={settings}
-              projects={projects}
-              onSaveSettings={saveSettings}
-              onAddProject={addProject}
-              onDeleteProject={deleteProject}
-              onSeedData={seedData}
-              onLogout={() => { setIsAdminLoggedIn(false); setPassword(''); navigateTo('home'); }}
-            />
-          )}
-        </motion.div>
-      </AnimatePresence>
+            )}
+          </motion.div>
+        </AnimatePresence>
+      </motion.div>
     </div>
   );
 }
