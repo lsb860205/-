@@ -16,7 +16,7 @@ import { CategoryPage, ProjectPage } from './components/GalleryViews';
 import { AdminDashboard } from './components/AdminDashboard';
 
 const DEFAULT_SETTINGS: GlobalSettings = {
-  homeHeadline: "PhotographyisthePoetry",
+  homeHeadline: "Photography is the Poetry of Place",
   homeIntro: "웨이블릿 스튜디오는 제주의 고유한 빛과 결을 담습니다.\n사진은 찰나의 순간을 기록하는 것을 넘어, 그 공간과 음식, 자연이 품고 있는 이야기를 시처럼 풀어내는 과정이라 믿습니다.",
   aboutHeadline: "Wavelet Studio",
   aboutSub: "제주의 빛과 결을 담는 스튜디오",
@@ -413,7 +413,7 @@ const HomeView = ({ settings, onNavigate, allProjects }: any) => {
             initial={{ y: 20, opacity: 0 }} 
             animate={{ y: 0, opacity: 1 }} 
             transition={{ delay: 0.5, duration: 1.2 }}
-            className="font-ui text-[28px] min-[380px]:text-[36px] md:text-[60px] lg:text-[80px] font-thin tracking-tight leading-[1.1] mb-6 px-4"
+            className="font-ui text-[24px] min-[320px]:text-[28px] min-[400px]:text-[36px] md:text-[60px] lg:text-[80px] font-thin tracking-normal leading-[1.2] md:leading-none mb-6 px-4 max-w-[900px] mx-auto overflow-hidden whitespace-normal break-words"
           >
             {settings.homeHeadline}
           </motion.h1>
