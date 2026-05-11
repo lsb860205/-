@@ -80,8 +80,8 @@ export const Navbar = ({ currentPage, onNavigate, isMenuOpen, setIsMenuOpen }: {
                   }}
                   className={`w-full p-4 text-left transition-all border rounded-sm ${
                     currentPage === link.value 
-                      ? 'bg-gray-50 border-accent/10' 
-                      : 'border-transparent hover:bg-gray-50/50'
+                      ? 'bg-bg-warm border-accent/20' 
+                      : 'border-transparent hover:bg-bg-warm/30'
                   }`}
                 >
                   <div className={`font-ui text-[14px] tracking-[0.15em] ${
