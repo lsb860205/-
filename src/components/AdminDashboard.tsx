@@ -133,7 +133,7 @@ export const AdminDashboard = ({
     setIsUploading(true);
     try {
       const compressedUrls = await Promise.all(files.map(file => processFile(file)));
-      setLocalSettings(prev => ({ ...prev, heroImages: [...prev.heroImages, ...compressedUrls] }));
+      updateLocalSettings(prev => ({ ...prev, heroImages: [...prev.heroImages, ...compressedUrls] }));
     } catch (error) {
       console.error('Upload failed:', error);
       alert('파일을 읽는 데 실패했습니다.');
@@ -150,7 +150,7 @@ export const AdminDashboard = ({
     setIsUploading(true);
     try {
       const compressed = await processFile(file);
-      setLocalSettings(prev => ({ ...prev, aboutImage: compressed }));
+      updateLocalSettings(prev => ({ ...prev, aboutImage: compressed }));
     } catch (error) {
       console.error('Upload failed:', error);
       alert('파일을 읽는 데 실패했습니다.');
@@ -457,7 +457,7 @@ export const AdminDashboard = ({
                 <div key={i} className="relative aspect-[4/3] group bg-bg-white border border-border overflow-hidden">
                   <img src={url} className="w-full h-full object-cover" />
                   <button 
-                    onClick={() => setLocalSettings(prev => ({ ...prev, heroImages: prev.heroImages?.filter((_, idx) => idx !== i) || [] }))}
+                    onClick={() => updateLocalSettings(prev => ({ ...prev, heroImages: prev.heroImages?.filter((_, idx) => idx !== i) || [] }))}
                     className="absolute inset-0 bg-red-500/80 text-white flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
                   >
                     <Trash2 size={18} />
@@ -482,9 +482,9 @@ export const AdminDashboard = ({
                     value={cat === 'place' ? localSettings.featuredPlaceId : cat === 'food' ? localSettings.featuredFoodId : localSettings.featuredNatureId}
                     onChange={e => {
                       const id = e.target.value;
-                      if (cat === 'place') setLocalSettings(s => ({ ...s, featuredPlaceId: id }));
-                      if (cat === 'food') setLocalSettings(s => ({ ...s, featuredFoodId: id }));
-                      if (cat === 'nature') setLocalSettings(s => ({ ...s, featuredNatureId: id }));
+                      if (cat === 'place') updateLocalSettings(s => ({ ...s, featuredPlaceId: id }));
+                      if (cat === 'food') updateLocalSettings(s => ({ ...s, featuredFoodId: id }));
+                      if (cat === 'nature') updateLocalSettings(s => ({ ...s, featuredNatureId: id }));
                     }}
                     className="bg-bg-white border border-border p-3 outline-none font-ui text-xs text-text-main focus:border-black transition-colors"
                   >
@@ -517,6 +517,10 @@ export const AdminDashboard = ({
 
       {activeTab === 'about' && (
         <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="flex flex-col gap-10">
+          <div className="flex flex-col gap-3">
+            <label className="font-ui text-[10px] tracking-widest text-gray-400 uppercase">어바웃 페이지 대제목</label>
+            <input value={localSettings.aboutHeadline} onChange={e => updateLocalSettings(s => ({ ...s, aboutHeadline: e.target.value }))} className="border-b border-border py-3 focus:border-black outline-none font-ui text-[20px] md:text-[24px] transition-colors bg-transparent text-text-main font-thin" placeholder="Wavelet Studio." />
+          </div>
           <div className="flex flex-col gap-3">
             <label className="font-ui text-[10px] tracking-widest text-gray-400 uppercase">어바웃 페이지 부제</label>
             <input value={localSettings.aboutSub} onChange={e => updateLocalSettings(s => ({ ...s, aboutSub: e.target.value }))} className="border-b border-border py-3 focus:border-black outline-none font-kr text-sm transition-colors bg-transparent text-text-main" />

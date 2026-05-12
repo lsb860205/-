@@ -193,7 +193,11 @@ export default function App() {
 
   // Firebase Handlers
   const saveSettings = async (s: GlobalSettings) => {
-    if (!auth || !db) return;
+    if (!auth || !db) {
+      console.error('Firebase services not initialized');
+      alert('데이터베이스 연결에 실패했습니다. 잠시 후 다시 시도해주세요.');
+      return;
+    }
     let currentUser = auth?.currentUser;
     if (!currentUser) { 
       try {
@@ -201,14 +205,18 @@ export default function App() {
         currentUser = result.user;
       } catch (err) {
         console.error('Login failed', err);
+        alert('저장을 위해 관리자 인증이 필요합니다.');
         return;
       }
     }
     try {
+      console.log('Attempting to save settings...', s);
       await setDoc(doc(db, 'settings', 'main'), { ...s, updatedAt: new Date().toISOString() });
       alert('설정이 저장되었습니다.');
     } catch (err) {
+      console.error('Save failed:', err);
       handleFirestoreError(err, OperationType.WRITE, 'settings/main');
+      alert('저장 실패: ' + (err instanceof Error ? err.message : '알 수 없는 오류'));
     }
   };
 
