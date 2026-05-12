@@ -104,14 +104,13 @@ export default function App() {
       settingsLoaded = true;
       checkLoaded();
     }, (err) => {
-      handleFirestoreError(err, OperationType.GET, 'settings/main');
+      console.warn('Settings failed to load, using defaults', err);
       settingsLoaded = true;
       checkLoaded();
     });
 
     const unsubProjects = onSnapshot(collection(db, 'projects'), (snap) => {
       const items = snap.docs.map(d => ({ id: d.id, ...d.data() })) as Project[];
-      // Stable sort by order then ID
       items.sort((a, b) => {
         const diff = (a.order ?? 0) - (b.order ?? 0);
         if (diff !== 0) return diff;
@@ -121,7 +120,7 @@ export default function App() {
       projectsLoaded = true;
       checkLoaded();
     }, (err) => {
-      handleFirestoreError(err, OperationType.LIST, 'projects');
+      console.warn('Projects failed to load, using dummies', err);
       projectsLoaded = true;
       checkLoaded();
     });
@@ -382,7 +381,12 @@ export default function App() {
   }
 
   if (isInitialLoad) {
-    return <div className="min-h-screen bg-bg-white" />;
+    return (
+      <div className="min-h-screen bg-bg-white flex flex-col items-center justify-center space-y-4">
+        <div className="w-12 h-12 border-t-2 border-black/20 border-t-black rounded-full animate-spin" />
+        <p className="font-ui text-[10px] tracking-[0.2em] opacity-40 uppercase">Loading Experience v1.5.5</p>
+      </div>
+    );
   }
 
   return (
@@ -526,7 +530,7 @@ const HomeView = ({ settings, onNavigate, allProjects }: any) => {
           >
             {settings.homeHeadlineSub || "Photography Studio in Jeju"}
           </motion.p>
-          <p className="fixed bottom-2 left-2 text-[8px] text-white/40 select-none z-50 bg-black/20 px-2 py-1 rounded">v1.5.4-SYNC</p>
+          <p className="fixed bottom-2 left-2 text-[8px] text-white/40 select-none z-50 bg-black/20 px-2 py-1 rounded">v1.5.5-SYNC</p>
         </div>
         <motion.div 
           animate={{ y: [0, 8, 0] }} 
