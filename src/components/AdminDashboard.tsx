@@ -276,102 +276,109 @@ export const AdminDashboard = ({
         <div className="flex flex-col gap-2">
           <h1 className="font-ui text-xl md:text-3xl tracking-tighter font-light flex items-center gap-3">
             관리자 대시보드
-            <span className="text-[10px] font-mono text-gray-300 font-normal opacity-50">v1.2</span>
+            <span className="text-[10px] font-mono text-gray-300 font-normal opacity-50">v1.3 - Updated</span>
           </h1>
-          <div className="flex items-center gap-2">
-            <div className={`w-2 h-2 rounded-full shadow-sm ${auth.currentUser ? 'bg-green-500 animate-pulse' : 'bg-red-500'}`} />
-            <span className="font-ui text-[10px] tracking-widest text-text-sub uppercase font-bold">
-              {auth.currentUser ? `연결됨: ${auth.currentUser.email}` : '관리자 인증이 필요합니다'}
-            </span>
-            {!auth.currentUser && (
-              <button 
-                onClick={handleLogin}
-                className="font-ui text-[11px] tracking-widest bg-black text-white px-3 py-1 rounded-sm hover:bg-zinc-800 transition-colors ml-2 uppercase font-bold"
-              >
-                인증하기 (Google Login)
-              </button>
-            )}
-            {authError && (
-              <div className="flex flex-col ml-4 p-6 bg-blue-50 border-2 border-blue-200 rounded-lg shadow-xl animate-in fade-in slide-in-from-top-4 duration-500 max-w-md">
-                <div className="flex items-center gap-2 mb-4">
-                  <div className="w-3 h-3 bg-blue-500 rounded-full animate-pulse" />
-                  <h3 className="text-blue-900 font-kr text-[14px] font-extrabold pb-0.5 border-b-2 border-blue-200">중요: Firebase 도메인 승인 필요</h3>
-                </div>
-                
-                <p className="text-blue-800 font-kr text-[11px] leading-relaxed mb-5">
-                  현재 접속 중인 도메인이 Firebase에서 승인되지 않았습니다.<br/>
-                  아래 주소를 복사하여 Firebase 콘솔 <span className="font-bold">{"설정 > 승인된 도메인"}</span>에 추가해 주세요.
-                </p>
-                
-                <div className="bg-white p-4 rounded-md border border-blue-100 shadow-inner mb-5">
-                  <div className="flex flex-col gap-2">
-                    <div className="flex items-center justify-between">
-                      <span className="text-blue-400 font-kr text-[9px] font-bold uppercase tracking-widest">Authorized Domain</span>
-                      <span className="text-[9px] bg-blue-100 text-blue-600 px-2 py-0.5 rounded font-bold">COPY THIS</span>
-                    </div>
-                    <div className="flex items-center gap-3 mt-1">
-                      <code className="flex-1 text-blue-700 font-mono text-[13px] font-black break-all select-all">{window.location.hostname}</code>
-                      <button 
-                        onClick={() => {
-                          const hostname = window.location.hostname;
-                          navigator.clipboard.writeText(hostname).then(() => {
-                            alert(`[${hostname}] 도메인이 복사되었습니다.\n\nFirebase 콘솔의 '승인된 도메인' 리스트에 추가해 주세요.`);
-                          });
-                        }}
-                        className="whitespace-nowrap font-kr text-[11px] bg-blue-600 text-white px-4 py-2.5 rounded-md hover:bg-blue-700 active:scale-95 transition-all shadow-md font-black ring-4 ring-blue-100"
-                      >
-                        주소 복사하기
-                      </button>
-                    </div>
-                  </div>
-                </div>
-
-                <div className="pt-4 border-t border-blue-100">
-                  <div className="flex items-center gap-2 mb-2">
-                    <span className="text-blue-300 font-kr text-[9px] font-black uppercase">System Error Log</span>
-                  </div>
-                  <code className="text-[10px] text-blue-400 font-mono bg-blue-50/50 p-2 block rounded border border-blue-50 overflow-x-auto whitespace-pre-wrap">
-                    {authError}
-                  </code>
-                </div>
-              </div>
+          <div className="flex flex-col gap-1">
+            <div className="flex items-center gap-2">
+              <div className={`w-2 h-2 rounded-full shadow-sm ${auth.currentUser ? 'bg-green-500 animate-pulse' : 'bg-red-500'}`} />
+              <span className="font-ui text-[10px] tracking-widest text-text-sub uppercase font-bold">
+                {auth.currentUser ? `연결됨: ${auth.currentUser.email}` : '관리자 인증이 필요합니다'}
+              </span>
+              {!auth.currentUser && (
+                <button 
+                  onClick={handleLogin}
+                  className="font-ui text-[11px] tracking-widest bg-black text-white px-4 py-1.5 rounded-sm hover:bg-zinc-800 transition-all ml-2 uppercase font-black shadow-lg hover:scale-105 active:scale-95"
+                >
+                  구글 로그인하여 인증하기
+                </button>
+              )}
+            </div>
+            {window.location.hostname.includes('asia-northeast1.run.app') && (
+              <span className="text-[9px] text-gray-300 font-kr">현재 호스트: {window.location.hostname} (Firebase 승인 필요)</span>
             )}
           </div>
         </div>
-        <div className="flex flex-wrap items-center gap-4 md:gap-10 border-b border-gray-100 pb-4">
-          <button 
-            onClick={() => setActiveTab('home')} 
-            className={`font-ui text-[12px] tracking-[0.2em] transition-all uppercase font-bold py-2 px-1 ${activeTab === 'home' ? 'text-black border-b-2 border-black' : 'text-gray-300 hover:text-gray-400'}`}
-          >
-            홈 설정
-          </button>
-          <button 
-            onClick={() => setActiveTab('about')} 
-            className={`font-ui text-[12px] tracking-[0.2em] transition-all uppercase font-bold py-2 px-1 ${activeTab === 'about' ? 'text-black border-b-2 border-black' : 'text-gray-300 hover:text-gray-400'}`}
-          >
-            어바웃 설정
-          </button>
-          <button 
-            onClick={() => setActiveTab('categories')} 
-            className={`font-ui text-[12px] tracking-[0.2em] transition-all uppercase font-bold py-2 px-1 ${activeTab === 'categories' ? 'text-black border-b-2 border-black' : 'text-gray-300 hover:text-gray-400'}`}
-          >
-            카테고리 관리
-          </button>
-          <button 
-            onClick={() => setActiveTab('projects')} 
-            className={`font-ui text-[12px] tracking-[0.2em] transition-all uppercase font-bold py-2 px-1 ${activeTab === 'projects' ? 'text-black border-b-2 border-black' : 'text-gray-300 hover:text-gray-400'}`}
-          >
-            프로젝트 관리
-          </button>
+        <div className="flex flex-wrap items-center gap-3 md:gap-8 border-b border-gray-100 pb-4 w-full">
+          {[
+            { id: 'home', label: '홈 설정' },
+            { id: 'about', label: '어바웃 설정' },
+            { id: 'categories', label: '카테고리 문구 관리' },
+            { id: 'projects', label: '프로젝트 업로드/관리' }
+          ].map((tab) => (
+            <button 
+              key={tab.id}
+              onClick={() => setActiveTab(tab.id as any)} 
+              className={`font-kr text-[13px] tracking-tight transition-all py-3 px-4 rounded-md flex items-center gap-2 ${
+                activeTab === tab.id 
+                  ? 'bg-black text-white font-bold shadow-md' 
+                  : 'text-gray-400 hover:text-black hover:bg-gray-50'
+              }`}
+            >
+              {tab.label}
+              {activeTab === tab.id && <div className="w-1.5 h-1.5 bg-white rounded-full animate-pulse" />}
+            </button>
+          ))}
           <div className="flex-1" />
           <button 
             onClick={onLogout}
-            className="font-ui text-[11px] tracking-[0.2em] text-red-400 hover:text-red-600 uppercase font-bold"
+            className="font-kr text-[12px] text-red-400 hover:text-white hover:bg-red-500 transition-all px-4 py-2 rounded-md uppercase font-bold border border-red-100"
           >
             로그아웃
           </button>
         </div>
       </div>
+
+      {authError && (
+        <div className="mb-10 animate-in fade-in slide-in-from-top-4 duration-500">
+          <div className="bg-blue-600 p-8 rounded-xl shadow-2xl text-white border-4 border-blue-400">
+            <div className="flex items-start gap-4">
+              <div className="p-3 bg-white/20 rounded-full">
+                <ExternalLink size={24} className="text-white" />
+              </div>
+              <div className="flex-1">
+                <h3 className="text-[18px] font-kr font-black mb-2">도메인 승인 오류 해결 방법 (필독)</h3>
+                <p className="text-[13px] font-kr opacity-90 leading-relaxed mb-6">
+                  현재 보시는 화면은 파이어베이스(Firebase)에서 <span className="underline decoration-2 underline-offset-4">승인되지 않은 도메인</span>이라 로그인이 막혀있습니다.<br/>
+                  <span className="font-bold">특히 AI Studio에서 '새 창에서 열기'를 할 경우 주소가 바뀌므로 매번 새 주소를 등록해줘야 합니다.</span>
+                </p>
+
+                <div className="bg-white/10 p-6 rounded-lg border border-white/20 mb-6">
+                  <span className="block text-[10px] uppercase tracking-widest text-blue-200 mb-2 font-bold">현재 등록해야 할 주소</span>
+                  <div className="flex flex-col sm:flex-row items-center gap-4">
+                    <code className="flex-1 bg-black/30 px-4 py-3 rounded text-[16px] font-mono font-bold select-all break-all border border-white/10">
+                      {window.location.hostname}
+                    </code>
+                    <button 
+                      onClick={() => {
+                        navigator.clipboard.writeText(window.location.hostname);
+                        alert('도메인이 복사되었습니다.');
+                      }}
+                      className="whitespace-nowrap bg-white text-blue-700 px-6 py-3 rounded-md font-kr font-black text-[14px] hover:bg-blue-50 transition-all shadow-xl active:scale-95"
+                    >
+                      이 주소 복사하기
+                    </button>
+                  </div>
+                </div>
+
+                <div className="space-y-3">
+                  <div className="flex gap-3 items-center text-[13px] font-kr">
+                    <div className="w-5 h-5 bg-white text-blue-600 rounded-full flex items-center justify-center text-[10px] font-bold">1</div>
+                    <span>Firebase 콘솔 접속 후 <span className="font-bold">{"프로젝트 설정 > 서비스 설정 > 인증(Authentication) > 설정"}</span> 메뉴 이동</span>
+                  </div>
+                  <div className="flex gap-3 items-center text-[13px] font-kr">
+                    <div className="w-5 h-5 bg-white text-blue-600 rounded-full flex items-center justify-center text-[10px] font-bold">2</div>
+                    <span><span className="font-bold">승인된 도메인</span> 섹션에서 '도메인 추가' 클릭 후 위에서 복사한 주소를 붙여넣기</span>
+                  </div>
+                </div>
+
+                <div className="mt-8 pt-4 border-t border-white/10 opacity-50 italic text-[11px] font-mono">
+                  Error Details: {authError}
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
 
       {activeTab === 'home' && (
         <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="flex flex-col gap-10">
