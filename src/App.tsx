@@ -127,11 +127,11 @@ export default function App() {
     });
 
     const timeout = setTimeout(() => {
-      if (isMounted) {
-        console.warn('Loading timeout - forcing display');
+      if (isMounted && isInitialLoad) {
+        console.warn('Loading emergency override - showing dummy data');
         setIsInitialLoad(false);
       }
-    }, 4000);
+    }, 2000);
 
     return () => { 
       isMounted = false;
@@ -395,11 +395,12 @@ export default function App() {
 
   if (isInitialLoad) {
     return (
-      <div className="min-h-screen bg-[#faf9f6] flex flex-col items-center justify-center space-y-6">
-        <div className="w-10 h-10 border-t-2 border-black/10 border-t-black rounded-full animate-spin" />
-        <div className="text-center">
-          <p className="font-ui text-[11px] tracking-[0.3em] opacity-30 uppercase font-light">Loading Wavelet Studio</p>
-          <p className="font-ui text-[8px] tracking-[0.1em] opacity-10 uppercase mt-2">v1.5.7-SYNC-VERIFIED</p>
+      <div className="min-h-screen bg-[#faf9f6] flex flex-col items-center justify-center">
+        <div className="w-10 h-10 border-t-2 border-black/10 border-t-black rounded-full animate-spin mb-6" />
+        <div className="text-center px-6">
+          <p className="font-ui text-[11px] tracking-[0.3em] opacity-30 uppercase font-light">Wavelet Studio</p>
+          <p className="font-ui text-[8px] tracking-[0.1em] opacity-10 uppercase mt-2">v1.6.0-RECOVERY-ACTIVE</p>
+          <p className="text-[9px] opacity-10 mt-4 max-w-[200px] mx-auto text-balance font-kr">연결이 지연되고 있습니다. 잠시만 기다려주세요.</p>
         </div>
       </div>
     );
@@ -548,7 +549,7 @@ const HomeView = ({ settings, onNavigate, allProjects }: any) => {
           >
             {settings.homeHeadlineSub || "Photography Studio in Jeju"}
           </motion.p>
-          <p className="fixed bottom-2 left-2 text-[8px] text-white/40 select-none z-50 bg-black/20 px-2 py-1 rounded">v1.5.7-RECOVERY</p>
+          <p className="fixed bottom-2 left-2 text-[8px] text-white/40 select-none z-50 bg-black/20 px-2 py-1 rounded">v1.6.0-FINAL</p>
         </div>
         <motion.div 
           animate={{ y: [0, 8, 0] }} 
