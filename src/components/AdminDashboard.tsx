@@ -338,34 +338,35 @@ export const AdminDashboard = ({
             )}
           </div>
         </div>
-        <div className="flex flex-wrap gap-3 md:gap-8">
+        <div className="flex flex-wrap items-center gap-4 md:gap-10 border-b border-gray-100 pb-4">
           <button 
             onClick={() => setActiveTab('home')} 
-            className={`font-ui text-[11px] tracking-[0.2em] transition-all ${activeTab === 'home' ? 'text-black border-b border-black pb-1' : 'text-gray-300'}`}
+            className={`font-ui text-[12px] tracking-[0.2em] transition-all uppercase font-bold py-2 px-1 ${activeTab === 'home' ? 'text-black border-b-2 border-black' : 'text-gray-300 hover:text-gray-400'}`}
           >
             홈 설정
           </button>
           <button 
             onClick={() => setActiveTab('about')} 
-            className={`font-ui text-[11px] tracking-[0.2em] transition-all ${activeTab === 'about' ? 'text-black border-b border-black pb-1' : 'text-gray-300'}`}
+            className={`font-ui text-[12px] tracking-[0.2em] transition-all uppercase font-bold py-2 px-1 ${activeTab === 'about' ? 'text-black border-b-2 border-black' : 'text-gray-300 hover:text-gray-400'}`}
           >
             어바웃 설정
           </button>
           <button 
             onClick={() => setActiveTab('categories')} 
-            className={`font-ui text-[11px] tracking-[0.2em] transition-all ${activeTab === 'categories' ? 'text-black border-b border-black pb-1' : 'text-gray-300'}`}
+            className={`font-ui text-[12px] tracking-[0.2em] transition-all uppercase font-bold py-2 px-1 ${activeTab === 'categories' ? 'text-black border-b-2 border-black' : 'text-gray-300 hover:text-gray-400'}`}
           >
             카테고리 관리
           </button>
           <button 
             onClick={() => setActiveTab('projects')} 
-            className={`font-ui text-[11px] tracking-[0.2em] transition-all ${activeTab === 'projects' ? 'text-black border-b border-black pb-1' : 'text-gray-300'}`}
+            className={`font-ui text-[12px] tracking-[0.2em] transition-all uppercase font-bold py-2 px-1 ${activeTab === 'projects' ? 'text-black border-b-2 border-black' : 'text-gray-300 hover:text-gray-400'}`}
           >
             프로젝트 관리
           </button>
+          <div className="flex-1" />
           <button 
             onClick={onLogout}
-            className="font-ui text-[11px] tracking-[0.2em] text-red-400 hover:text-red-600"
+            className="font-ui text-[11px] tracking-[0.2em] text-red-400 hover:text-red-600 uppercase font-bold"
           >
             로그아웃
           </button>
