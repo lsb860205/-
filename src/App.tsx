@@ -96,13 +96,22 @@ export default function App() {
       return;
     }
 
+    let isMounted = true;
     let settingsLoaded = false;
     let projectsLoaded = false;
-    let isMounted = true;
+
+    // Safety fallback: if anything fails, we show the app anyway after 800ms
+    const fallbackTimeout = setTimeout(() => {
+      if (isMounted && isInitialLoad) {
+        console.warn('Emergency UI push (0.8s)');
+        setIsInitialLoad(false);
+      }
+    }, 800);
 
     const checkLoaded = () => {
       if (settingsLoaded && projectsLoaded && isMounted) {
         setIsInitialLoad(false);
+        clearTimeout(fallbackTimeout);
       }
     };
 
@@ -413,10 +422,10 @@ export default function App() {
         <div className="w-16 h-16 border-4 border-black/5 border-t-black rounded-full animate-spin mb-8" />
         <div className="text-center px-6">
           <p className="font-ui text-[12px] tracking-[0.4em] opacity-40 uppercase font-light">Wavelet Studio</p>
-          <p className="font-ui text-[9px] tracking-[0.1em] opacity-20 uppercase mt-2">v1.6.1-STABLE-RECOVERY</p>
+          <p className="font-ui text-[9px] tracking-[0.1em] opacity-20 uppercase mt-2">v1.6.5-ULTRA-STABLE</p>
           <div className="mt-8 space-y-1">
-            <p className="text-[10px] opacity-20 font-kr">연결을 최적화하고 있습니다.</p>
-            <p className="text-[10px] opacity-10 font-kr italic">Domain verified. Initializing secure sync...</p>
+            <p className="text-[10px] opacity-20 font-kr">최적화된 경로로 접속 중입니다.</p>
+            <p className="text-[10px] opacity-10 font-kr italic">Network stabilization active.</p>
           </div>
         </div>
       </div>
@@ -566,7 +575,7 @@ const HomeView = ({ settings, onNavigate, allProjects }: any) => {
           >
             {settings.homeHeadlineSub || "Photography Studio in Jeju"}
           </motion.p>
-          <p className="fixed bottom-2 left-2 text-[8px] text-white/40 select-none z-50 bg-black/20 px-2 py-1 rounded">v1.6.1-FINAL-SYNC</p>
+          <p className="fixed bottom-2 left-2 text-[8px] text-white/40 select-none z-50 bg-black/20 px-2 py-1 rounded">v1.6.5-LIVE</p>
         </div>
         <motion.div 
           animate={{ y: [0, 8, 0] }} 
