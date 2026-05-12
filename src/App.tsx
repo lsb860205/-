@@ -103,8 +103,12 @@ export default function App() {
 
     const unsubProjects = onSnapshot(collection(db, 'projects'), (snap) => {
       const items = snap.docs.map(d => ({ id: d.id, ...d.data() })) as Project[];
-      // Sort in memory to avoid query exclusion of documents missing 'order' field
-      items.sort((a, b) => (a.order ?? 0) - (b.order ?? 0));
+      // Stable sort by order then ID
+      items.sort((a, b) => {
+        const diff = (a.order ?? 0) - (b.order ?? 0);
+        if (diff !== 0) return diff;
+        return a.id.localeCompare(b.id);
+      });
       setProjects(items);
       projectsLoaded = true;
       checkLoaded();
@@ -157,9 +161,11 @@ export default function App() {
 
   // Firebase Handlers
   const saveSettings = async (s: GlobalSettings) => {
-    if (!user) { 
+    let currentUser = auth.currentUser;
+    if (!currentUser) { 
       try {
-        await signInWithPopup(auth, googleProvider); 
+        const result = await signInWithPopup(auth, googleProvider); 
+        currentUser = result.user;
       } catch (err) {
         console.error('Login failed', err);
         return;
@@ -174,9 +180,11 @@ export default function App() {
   };
 
   const addProject = async (p: Partial<Project>) => {
-    if (!user) { 
+    let currentUser = auth.currentUser;
+    if (!currentUser) { 
       try {
-        await signInWithPopup(auth, googleProvider); 
+        const result = await signInWithPopup(auth, googleProvider); 
+        currentUser = result.user;
       } catch (err) {
         console.error('Login failed', err);
         return false;
@@ -195,8 +203,6 @@ export default function App() {
       });
 
       // 2. Create photos in subcollection
-      // We avoid writeBatch here because 20+ photos as Base64 (600KB+ each) 
-      // can easily exceed the 10MB transaction size limit of a single batch.
       if (photos && photos.length > 0) {
         const photoPromises = photos.map((url, i) => {
           const photoId = i.toString().padStart(3, '0');
@@ -215,9 +221,11 @@ export default function App() {
   };
 
   const updateProject = async (id: string, p: Partial<Project>) => {
-    if (!user) {
+    let currentUser = auth.currentUser;
+    if (!currentUser) {
       try {
-        await signInWithPopup(auth, googleProvider);
+        const result = await signInWithPopup(auth, googleProvider);
+        currentUser = result.user;
       } catch (err) {
         console.error('Login failed', err);
         return false;
@@ -235,15 +243,12 @@ export default function App() {
 
       // 2. Update photos
       if (photos) {
-        // Simple approach for portfolio: delete and recreate subcollection docs to ensure order matches exactly
         const photosRef = collection(db, `projects/${id}/gallery`);
         const photosSnapshot = await getDocs(photosRef);
         
-        // Delete old
         const deletePromises = photosSnapshot.docs.map(doc => deleteDoc(doc.ref));
         await Promise.all(deletePromises);
         
-        // Create new
         const photoPromises = photos.map((url, i) => {
           const photoId = i.toString().padStart(3, '0');
           const photoDocRef = doc(db, `projects/${id}/gallery`, photoId);
@@ -261,13 +266,9 @@ export default function App() {
   };
 
   const deleteProject = async (id: string) => {
-    if (!user) { 
-      try {
-        await signInWithPopup(auth, googleProvider); 
-      } catch (err) {
-        console.error('Login failed', err);
-        return;
-      }
+    if (!auth.currentUser) {
+      alert('관리자 인증이 필요합니다. 상단의 인증하기 버튼을 눌러주세요.');
+      return;
     }
     
     try {
@@ -275,25 +276,24 @@ export default function App() {
       const photosRef = collection(db, `projects/${id}/gallery`);
       const photosSnapshot = await getDocs(photosRef);
       
-      // Delete all photos concurrently
       const deletePromises = photosSnapshot.docs.map(doc => deleteDoc(doc.ref));
       await Promise.all(deletePromises);
       
       // 2. Delete main doc
       await deleteDoc(doc(db, 'projects', id));
       
-      // No alert here, the UI will reflect deletion automatically via onSnapshot
+      alert('삭제되었습니다.');
     } catch (err) {
       handleFirestoreError(err, OperationType.DELETE, `projects/${id}`);
-      alert('삭제 중 오류가 발생했습니다.');
+      alert('삭제 중 오류가 발생했습니다. 권한이 있는지 확인해주세요.');
     }
   };
 
   const reorderProjects = async (reorderedProjects: Project[]) => {
-    if (!user) return;
+    if (!auth.currentUser) return;
+    
     try {
       const batch = writeBatch(db);
-      // Ensure we only update docs that have an ID
       reorderedProjects.forEach((p, i) => {
         if (p.id) {
           batch.update(doc(db, 'projects', p.id), { order: i });
@@ -307,9 +307,11 @@ export default function App() {
   };
 
   const seedData = async () => {
-    if (!user) { 
+    let currentUser = auth.currentUser;
+    if (!currentUser) { 
       try {
-        await signInWithPopup(auth, googleProvider); 
+        const result = await signInWithPopup(auth, googleProvider); 
+        currentUser = result.user;
       } catch (err) {
         console.error('Login failed', err);
         return;
@@ -321,11 +323,13 @@ export default function App() {
         await setDoc(doc(db, 'settings', 'main'), { ...DEFAULT_SETTINGS, updatedAt: new Date().toISOString() });
         
         // 2. Projects
+        let globalOrder = 0;
         for (const p of DUMMY_PROJECTS) {
           const { photos, ...projectData } = p;
           await setDoc(doc(db, 'projects', p.id), { 
             ...projectData, 
             photoCount: photos?.length || 0,
+            order: globalOrder++, 
             createdAt: new Date().toISOString() 
           });
           

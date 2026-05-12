@@ -156,64 +156,84 @@ export const AdminDashboard = ({
   };
 
   const [deleteConfirmId, setDeleteConfirmId] = useState<string | null>(null);
+  const [isReordering, setIsReordering] = useState(false);
+  const [authError, setAuthError] = useState<string | null>(null);
 
   const categories: ('place' | 'food' | 'nature')[] = ['place', 'food', 'nature'];
 
-  const moveProject = (e: React.MouseEvent, category: string, index: number, direction: 'up' | 'down') => {
+  const moveProject = async (e: React.MouseEvent, category: string, index: number, direction: 'up' | 'down') => {
     e.stopPropagation();
+    if (!auth.currentUser) {
+      alert('관리자 인증이 필요합니다.');
+      return;
+    }
+    if (isReordering) return;
     
-    // 1. Get all projects in this category, properly sorted
-    const catProjects = [...projects]
-      .filter(p => p.category === category)
-      .sort((a, b) => (a.order ?? 0) - (b.order ?? 0));
-    
-    const targetIndex = direction === 'up' ? index - 1 : index + 1;
-    if (targetIndex < 0 || targetIndex >= catProjects.length) return;
-    
-    // 2. Perform the swap in the localized category list
-    const newCatProjects = [...catProjects];
-    const temp = newCatProjects[index];
-    newCatProjects[index] = newCatProjects[targetIndex];
-    newCatProjects[targetIndex] = temp;
-    
-    // 3. Reconstruct the global list with updated orders
-    // We update the order of EVERYTHING to be safe and sequential
-    const otherProjects = projects.filter(p => p.category !== category);
-    
-    // Merge back and normalize ALL orders 0, 1, 2, ...
-    // Note: We keep the relative order of other categories as they were
-    const merged = [...otherProjects, ...newCatProjects].sort((a, b) => {
-      // If categories are same, use the newCatProjects order implicitly by how we merged
-      // But to be safe, we'll just map them to guaranteed sequential integers
-      return (a.order ?? 0) - (b.order ?? 0);
-    });
-
-    // Final result: all projects get a new 0-indexed order based on their new relative positions
-    const finalProjects = [...projects];
-    // Create a mapping of ID -> newOrder
-    // First, let's just update the target category's relative positions in a new copy of projects
-    const reorderedGlobal = [...projects].sort((a, b) => (a.order ?? 0) - (b.order ?? 0));
-    
-    // Find p1 and p2 in the global list
-    const p1 = catProjects[index];
-    const p2 = catProjects[targetIndex];
-    
-    const gIdx1 = reorderedGlobal.findIndex(p => p.id === p1.id);
-    const gIdx2 = reorderedGlobal.findIndex(p => p.id === p2.id);
-    
-    if (gIdx1 !== -1 && gIdx2 !== -1) {
-      const tempItem = reorderedGlobal[gIdx1];
-      reorderedGlobal[gIdx1] = reorderedGlobal[gIdx2];
-      reorderedGlobal[gIdx2] = tempItem;
+    setIsReordering(true);
+    try {
+      // 1. Get all projects in this category, stable sorted
+      const catProjects = [...projects]
+        .filter(p => p.category === category)
+        .sort((a, b) => {
+          const orderDiff = (a.order ?? 0) - (b.order ?? 0);
+          if (orderDiff !== 0) return orderDiff;
+          return a.id.localeCompare(b.id);
+        });
       
-      // Now re-assign sequential orders to everyone to avoid collisions
-      const sequential = reorderedGlobal.map((p, i) => ({ ...p, order: i }));
-      onReorderProjects(sequential);
+      const targetIndex = direction === 'up' ? index - 1 : index + 1;
+      if (targetIndex < 0 || targetIndex >= catProjects.length) {
+        setIsReordering(false);
+        return;
+      }
+      
+      // 2. We find the specific two projects to swap relative positions
+      const p1 = catProjects[index];
+      const p2 = catProjects[targetIndex];
+      
+      // 3. Construct a strictly ordered global list
+      // We sort EVERYTHING globally first to define a baseline sequence
+      const globalProjectsOrdered = [...projects].sort((a, b) => {
+        const orderDiff = (a.order ?? 0) - (b.order ?? 0);
+        if (orderDiff !== 0) return orderDiff;
+        return a.id.localeCompare(b.id);
+      });
+
+      const gIdx1 = globalProjectsOrdered.findIndex(p => p.id === p1.id);
+      const gIdx2 = globalProjectsOrdered.findIndex(p => p.id === p2.id);
+      
+      if (gIdx1 !== -1 && gIdx2 !== -1) {
+        const temp = globalProjectsOrdered[gIdx1];
+        globalProjectsOrdered[gIdx1] = globalProjectsOrdered[gIdx2];
+        globalProjectsOrdered[gIdx2] = temp;
+        
+        // Map to guaranteed sequential orders [0, 1, 2, ...]
+        const final = globalProjectsOrdered.map((p, i) => ({ ...p, order: i }));
+        await onReorderProjects(final);
+      }
+    } catch (err) {
+      console.error('Reorder error:', err);
+      alert('순서 변경 중 오류가 발생했습니다.');
+    } finally {
+      setIsReordering(false);
+    }
+  };
+
+  const handleLogin = async () => {
+    setAuthError(null);
+    try {
+      await signInWithPopup(auth, googleProvider);
+    } catch (err) {
+      console.error('Login error:', err);
+      setAuthError(err instanceof Error ? err.message : '인증 실패');
     }
   };
 
   const handleDeleteClick = (e: React.MouseEvent, project: Project) => {
     e.stopPropagation();
+    if (!auth.currentUser) {
+      alert('관리자 인증이 필요합니다.');
+      return;
+    }
     setDeleteConfirmId(project.id);
   };
 
@@ -262,11 +282,14 @@ export const AdminDashboard = ({
             </span>
             {!auth.currentUser && (
               <button 
-                onClick={() => signInWithPopup(auth, googleProvider)}
-                className="font-ui text-[9px] tracking-widest text-accent hover:underline ml-2 uppercase"
+                onClick={handleLogin}
+                className="font-ui text-[10px] tracking-widest text-accent hover:text-black font-bold ml-2 uppercase underline underline-offset-4"
               >
                 인증하기
               </button>
+            )}
+            {authError && (
+              <span className="text-red-500 font-kr text-[10px] ml-2">[{authError}]</span>
             )}
           </div>
         </div>
@@ -613,9 +636,24 @@ export const AdminDashboard = ({
           </div>
 
           {/* Project List Grouped by Category */}
-          <div className="space-y-24">
+          <div className="space-y-24 relative">
+            {isReordering && (
+              <div className="fixed inset-0 bg-white/40 backdrop-blur-[2px] z-[100] flex items-center justify-center cursor-wait">
+                <div className="bg-black text-white px-6 py-3 rounded-full font-ui text-[10px] tracking-[0.3em] uppercase flex items-center gap-3 shadow-xl">
+                  <div className="w-3 h-3 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                  Saving Order...
+                </div>
+              </div>
+            )}
+            
             {categories.map(cat => {
-              const catProjects = projects.filter(p => p.category === cat).sort((a, b) => (a.order || 0) - (b.order || 0));
+              const catProjects = projects
+                .filter(p => p.category === cat)
+                .sort((a, b) => {
+                  const diff = (a.order ?? 0) - (b.order ?? 0);
+                  if (diff !== 0) return diff;
+                  return a.id.localeCompare(b.id);
+                });
               return (
                 <div key={cat} className="space-y-10">
                   <div className="flex items-center gap-4 border-b border-border pb-4">
