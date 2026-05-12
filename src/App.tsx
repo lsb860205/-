@@ -526,7 +526,7 @@ const HomeView = ({ settings, onNavigate, allProjects }: any) => {
           >
             {settings.homeHeadlineSub || "Photography Studio in Jeju"}
           </motion.p>
-          <p className="fixed bottom-2 left-2 text-[8px] text-white/20 select-none z-50">v1.5.3-REBUILT</p>
+          <p className="fixed bottom-2 left-2 text-[8px] text-white/40 select-none z-50 bg-black/20 px-2 py-1 rounded">v1.5.4-SYNC</p>
         </div>
         <motion.div 
           animate={{ y: [0, 8, 0] }} 
