@@ -31,6 +31,12 @@ export const AdminDashboard = ({
   onLogout
 }: AdminDashboardProps) => {
   const [localSettings, setLocalSettings] = useState(settings);
+
+  // Sync localSettings when props update (Firebase load)
+  React.useEffect(() => {
+    setLocalSettings(settings);
+  }, [settings]);
+
   const [activeTab, setActiveTab] = useState<'home' | 'about' | 'categories' | 'projects'>('home');
   const [isUploading, setIsUploading] = useState(false);
   const [uploadProgress, setUploadProgress] = useState({ current: 0, total: 0 });

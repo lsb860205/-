@@ -84,85 +84,80 @@ export default function App() {
   const [password, setPassword] = useState('');
   const [settings, setSettings] = useState<GlobalSettings>(DEFAULT_SETTINGS);
   const [projects, setProjects] = useState<Project[]>([]);
-  const [isInitialLoad, setIsInitialLoad] = useState(true);
-  const [user, setUser] = useState(auth.currentUser);
+    const [isInitialLoad, setIsInitialLoad] = useState(true);
+    const [user, setUser] = useState(auth.currentUser);
 
-  useEffect(() => auth.onAuthStateChanged(u => setUser(u)), []);
+    // Sync user state
+    useEffect(() => {
+      const unsub = auth.onAuthStateChanged(u => setUser(u));
+      return () => unsub();
+    }, []);
 
-  useEffect(() => {
-    if (!db) {
-      console.error('Database connection failed - forcing recovery mode');
-      setIsInitialLoad(false);
-      return;
-    }
-
-    let isMounted = true;
-    let settingsLoaded = false;
-    let projectsLoaded = false;
-
-    // Safety fallback: if anything fails, we show the app anyway after 800ms
-    const fallbackTimeout = setTimeout(() => {
-      if (isMounted && isInitialLoad) {
-        console.warn('Emergency UI push (0.8s)');
+    useEffect(() => {
+      if (!db) {
         setIsInitialLoad(false);
+        return;
       }
-    }, 800);
 
-    const checkLoaded = () => {
-      if (settingsLoaded && projectsLoaded && isMounted) {
-        setIsInitialLoad(false);
-        clearTimeout(fallbackTimeout);
-      }
-    };
+      let isMounted = true;
+      let settingsLoaded = false;
+      let projectsLoaded = false;
 
-    let unsubSettings: () => void = () => {};
-    let unsubProjects: () => void = () => {};
+      const checkLoaded = () => {
+        if (settingsLoaded && projectsLoaded && isMounted) {
+          setIsInitialLoad(false);
+        }
+      };
 
-    try {
-      unsubSettings = onSnapshot(doc(db, 'settings', 'main'), (snap) => {
-        if (snap.exists()) setSettings(snap.data() as GlobalSettings);
-        settingsLoaded = true;
-        checkLoaded();
-      }, (err) => {
-        console.warn('Settings failed to load', err);
-        settingsLoaded = true;
-        checkLoaded();
-      });
+      let unsubSettings: () => void = () => {};
+      let unsubProjects: () => void = () => {};
 
-      unsubProjects = onSnapshot(collection(db, 'projects'), (snap) => {
-        const items = snap.docs.map(d => ({ id: d.id, ...d.data() })) as Project[];
-        items.sort((a, b) => {
-          const diff = (a.order ?? 0) - (b.order ?? 0);
-          if (diff !== 0) return diff;
-          return a.id.localeCompare(b.id);
+      try {
+        unsubSettings = onSnapshot(doc(db, 'settings', 'main'), (snap) => {
+          if (snap.exists()) setSettings(snap.data() as GlobalSettings);
+          settingsLoaded = true;
+          checkLoaded();
+        }, (err) => {
+          console.warn('Settings failed to load', err);
+          settingsLoaded = true;
+          checkLoaded();
         });
-        setProjects(items);
-        projectsLoaded = true;
-        checkLoaded();
-      }, (err) => {
-        console.warn('Projects failed to load', err);
-        projectsLoaded = true;
-        checkLoaded();
-      });
-    } catch (err) {
-      console.error('Snapshot registration failed', err);
-      setIsInitialLoad(false);
-    }
 
-    const timeout = setTimeout(() => {
-      if (isMounted && isInitialLoad) {
-        console.warn('Loading emergency override - showing dummy data');
+        unsubProjects = onSnapshot(collection(db, 'projects'), (snap) => {
+          const items = snap.docs.map(d => ({ id: d.id, ...d.data() })) as Project[];
+          items.sort((a, b) => {
+            const diff = (a.order ?? 0) - (b.order ?? 0);
+            if (diff !== 0) return diff;
+            return a.id.localeCompare(b.id);
+          });
+          setProjects(items);
+          projectsLoaded = true;
+          checkLoaded();
+        }, (err) => {
+          console.warn('Projects failed to load', err);
+          projectsLoaded = true;
+          checkLoaded();
+        });
+      } catch (err) {
+        console.error('Snapshot registration failed', err);
         setIsInitialLoad(false);
       }
-    }, 1500);
 
-    return () => { 
-      isMounted = false;
-      unsubSettings(); 
-      unsubProjects(); 
-      clearTimeout(timeout); 
-    };
-  }, []);
+      // More patient timeout for Firebase sync (3 seconds)
+      const timeout = setTimeout(() => {
+        if (isMounted && isInitialLoad) {
+          console.warn('Firebase sync delayed - entering visual fallback');
+          setIsInitialLoad(false);
+        }
+      }, 3000);
+
+      return () => { 
+        isMounted = false;
+        unsubSettings(); 
+        unsubProjects(); 
+        clearTimeout(timeout); 
+      };
+    }, []);
 
   const displayProjects = useMemo(() => projects.length > 0 ? projects : DUMMY_PROJECTS, [projects]);
 
@@ -418,15 +413,23 @@ export default function App() {
 
   if (isInitialLoad) {
     return (
-      <div className="min-h-screen bg-[#f3f4f6] flex flex-col items-center justify-center">
-        <div className="w-16 h-16 border-4 border-black/5 border-t-black rounded-full animate-spin mb-8" />
-        <div className="text-center px-6">
-          <p className="font-ui text-[12px] tracking-[0.4em] opacity-40 uppercase font-light">Wavelet Studio</p>
-          <p className="font-ui text-[9px] tracking-[0.1em] opacity-20 uppercase mt-2">v1.6.5-ULTRA-STABLE</p>
-          <div className="mt-8 space-y-1">
-            <p className="text-[10px] opacity-20 font-kr">최적화된 경로로 접속 중입니다.</p>
-            <p className="text-[10px] opacity-10 font-kr italic">Network stabilization active.</p>
+      <div className="min-h-screen bg-bg-white flex flex-col items-center justify-center p-6 text-center">
+        <motion.div
+          animate={{ scale: [1, 1.05, 1], opacity: [0.3, 0.6, 0.3] }}
+          transition={{ duration: 2, repeat: Infinity, ease: "easeInOut" }}
+          className="font-ui text-[14px] tracking-[0.6em] text-text-main font-light uppercase"
+        >
+          WAVELET STUDIO
+        </motion.div>
+        <div className="mt-8 space-y-2">
+          <div className="w-[120px] h-[1px] bg-accent/20 mx-auto relative overflow-hidden">
+            <motion.div 
+              animate={{ x: [-120, 120] }}
+              transition={{ duration: 1.5, repeat: Infinity, ease: "linear" }}
+              className="absolute inset-0 bg-accent w-full"
+            />
           </div>
+          <p className="font-ui text-[8px] tracking-[0.2em] opacity-40 uppercase">Establishing Secure Connection</p>
         </div>
       </div>
     );
@@ -481,8 +484,8 @@ export default function App() {
                   type={currentPage}
                   projects={displayProjects.filter(p => p.category === currentPage)}
                   meta={{
-                    title: (settings as any)[`${currentPage}Title`] || currentPage.toUpperCase(),
-                    description: (settings as any)[`${currentPage}Description`] || ''
+                    title: (settings as any)[`${currentPage}Title`] || (CATEGORY_META as any)[currentPage].title,
+                    description: (settings as any)[`${currentPage}Description`] || (CATEGORY_META as any)[currentPage].description
                   }}
                   onNavigate={navigateTo}
                   onAdmin={() => navigateTo('admin')}
@@ -543,7 +546,7 @@ const HomeView = ({ settings, onNavigate, allProjects }: any) => {
 
   return (
     <div className="pt-[70px]">
-      <section className="relative h-[calc(100vh-70px)] overflow-hidden bg-[#e5e7eb] flex items-center justify-center">
+      <section className="relative h-[calc(100vh-70px)] overflow-hidden bg-bg-warm flex items-center justify-center">
         <AnimatePresence mode="wait">
           {heroes.length > 0 && (
             <motion.div
@@ -575,7 +578,6 @@ const HomeView = ({ settings, onNavigate, allProjects }: any) => {
           >
             {settings.homeHeadlineSub || "Photography Studio in Jeju"}
           </motion.p>
-          <p className="fixed bottom-2 left-2 text-[8px] text-white/40 select-none z-50 bg-black/20 px-2 py-1 rounded">v1.6.5-LIVE</p>
         </div>
         <motion.div 
           animate={{ y: [0, 8, 0] }} 
@@ -588,7 +590,7 @@ const HomeView = ({ settings, onNavigate, allProjects }: any) => {
 
       <section className="px-6 md:px-10 py-16 md:py-24 lg:py-40 grid lg:grid-cols-2 gap-10 lg:gap-24 max-w-[1200px] mx-auto items-start lg:items-center">
         <h2 className="font-ui text-[26px] sm:text-[32px] md:text-[40px] lg:text-[48px] text-text-main leading-[1.2] font-light tracking-tight lg:max-w-[500px]">
-          {settings.homeHeadline}
+          Wavelet<br/>Studio.
         </h2>
         <div className="flex flex-col gap-6">
           <div className="w-12 h-[1px] bg-accent/30 hidden lg:block" />
