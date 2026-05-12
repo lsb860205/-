@@ -1,4 +1,4 @@
-// v1.6 Production Sync
+// v2.0 Production Core
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { ArrowDown, LogIn } from 'lucide-react';
@@ -24,7 +24,10 @@ const DEFAULT_SETTINGS: GlobalSettings = {
   aboutHeadline: "Wavelet Studio",
   aboutSub: "제주의 빛과 결을 담는 스튜디오",
   aboutBody: "웨이블릿 스튜디오는 제주의 일상을 기록합니다. 우리는 사진 한 장에 담긴 빛과 그림자, 질감과 온도를 소중히 여깁니다. 그 순간들을 있는 그대로, 그러나 특별하게 담아냅니다.",
-  heroImages: [],
+  heroImages: [
+    "https://picsum.photos/1920/1080?random=1",
+    "https://picsum.photos/1920/1080?random=2"
+  ],
   placeTitle: 'PLACE',
   placeDescription: '제주의 공간을 기록합니다. 카페, 숙소, 그리고 그 안의 이야기. 건축의 선과 공간이 머금은 온도를 사진이라는 언어로 번역합니다.',
   foodTitle: 'FOOD',
@@ -107,8 +110,9 @@ export default function App() {
         settingsLoaded = true;
         checkLoaded();
       }, (err) => {
-        console.warn('Settings sync offline', err);
+        console.warn('Settings sync error', err);
         settingsLoaded = true;
+        setIsInitialLoad(false); 
         checkLoaded();
       });
 
@@ -123,8 +127,9 @@ export default function App() {
         projectsLoaded = true;
         checkLoaded();
       }, (err) => {
-        console.warn('Projects sync offline', err);
+        console.warn('Projects sync error', err);
         projectsLoaded = true;
+        setIsInitialLoad(false);
         checkLoaded();
       });
 
@@ -188,7 +193,7 @@ export default function App() {
 
   // Firebase Handlers
   const saveSettings = async (s: GlobalSettings) => {
-    let currentUser = auth.currentUser;
+    let currentUser = auth?.currentUser;
     if (!currentUser) { 
       try {
         const result = await signInWithPopup(auth, googleProvider); 
@@ -207,7 +212,7 @@ export default function App() {
   };
 
   const addProject = async (p: Partial<Project>) => {
-    let currentUser = auth.currentUser;
+    let currentUser = auth?.currentUser;
     if (!currentUser) { 
       try {
         const result = await signInWithPopup(auth, googleProvider); 
@@ -248,7 +253,7 @@ export default function App() {
   };
 
   const updateProject = async (id: string, p: Partial<Project>) => {
-    let currentUser = auth.currentUser;
+    let currentUser = auth?.currentUser;
     if (!currentUser) {
       try {
         const result = await signInWithPopup(auth, googleProvider);
@@ -293,7 +298,7 @@ export default function App() {
   };
 
   const deleteProject = async (id: string) => {
-    if (!auth.currentUser) {
+    if (!auth?.currentUser) {
       alert('관리자 인증이 필요합니다. 상단의 인증하기 버튼을 눌러주세요.');
       return;
     }
@@ -317,7 +322,7 @@ export default function App() {
   };
 
   const reorderProjects = async (reorderedProjects: Project[]) => {
-    if (!auth.currentUser) return;
+    if (!auth?.currentUser) return;
     
     try {
       const batch = writeBatch(db);
@@ -334,7 +339,7 @@ export default function App() {
   };
 
   const seedData = async () => {
-    let currentUser = auth.currentUser;
+    let currentUser = auth?.currentUser;
     if (!currentUser) { 
       try {
         const result = await signInWithPopup(auth, googleProvider); 

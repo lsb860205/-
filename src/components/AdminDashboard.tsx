@@ -184,7 +184,7 @@ export const AdminDashboard = ({
 
   const moveProject = async (e: React.MouseEvent, category: string, index: number, direction: 'up' | 'down') => {
     e.stopPropagation();
-    if (!auth.currentUser) {
+    if (!auth?.currentUser) {
       alert('관리자 인증이 필요합니다.');
       return;
     }
@@ -251,7 +251,7 @@ export const AdminDashboard = ({
 
   const handleDeleteClick = (e: React.MouseEvent, project: Project) => {
     e.stopPropagation();
-    if (!auth.currentUser) {
+    if (!auth?.currentUser) {
       alert('관리자 인증이 필요합니다.');
       return;
     }
@@ -297,15 +297,15 @@ export const AdminDashboard = ({
         <div className="flex flex-col gap-2">
           <h1 className="font-ui text-xl md:text-3xl tracking-tighter font-light flex items-center gap-3">
             관리자 대시보드
-            <span className="text-[10px] font-mono text-gray-300 font-normal opacity-50">v1.5 - Production Ready</span>
+            <span className="text-[10px] font-mono text-gray-300 font-normal opacity-50">v2.0.0 - STABLE CORE</span>
           </h1>
-          <div className="flex flex-col gap-1">
+            <div className="flex flex-col gap-1">
             <div className="flex items-center gap-2">
-              <div className={`w-2 h-2 rounded-full shadow-sm ${auth.currentUser ? 'bg-green-500 animate-pulse' : 'bg-red-500'}`} />
+              <div className={`w-2 h-2 rounded-full shadow-sm ${auth?.currentUser ? 'bg-green-500 animate-pulse' : 'bg-red-500'}`} />
               <span className="font-ui text-[10px] tracking-widest text-text-sub uppercase font-bold">
-                {auth.currentUser ? `연결됨: ${auth.currentUser.email}` : '관리자 인증이 필요합니다'}
+                {auth?.currentUser ? `연결됨: ${auth.currentUser.email}` : '관리자 인증이 필요합니다'}
               </span>
-              {!auth.currentUser && (
+              {!auth?.currentUser && (
                 <button 
                   onClick={handleLogin}
                   className="font-ui text-[11px] tracking-widest bg-black text-white px-4 py-1.5 rounded-sm hover:bg-zinc-800 transition-all ml-2 uppercase font-black shadow-lg hover:scale-105 active:scale-95"
@@ -314,7 +314,7 @@ export const AdminDashboard = ({
                 </button>
               )}
             </div>
-            {!auth.currentUser && window.location.hostname.includes('asia-northeast1.run.app') && (
+            {!auth?.currentUser && window.location.hostname.includes('asia-northeast1.run.app') && (
               <div className="flex items-center gap-2 mt-1">
                 <span className="text-[9px] text-blue-400 font-kr bg-blue-50 px-2 py-0.5 rounded border border-blue-100 flex items-center gap-1">
                   <ExternalLink size={8} /> 
@@ -323,7 +323,7 @@ export const AdminDashboard = ({
                 <p className="text-[9px] text-gray-400 font-kr italic"> (로그인이 잘 된다면 무시하셔도 됩니다)</p>
               </div>
             )}
-            {auth.currentUser && (
+            {auth?.currentUser && (
               <p className="text-[9px] text-gray-400 font-kr mt-1">
                 ※ 수정사항이 안 보이면 <span className="font-bold text-gray-600">Ctrl+Shift+R</span>을 눌러 새로고침 해주세요.
               </p>
