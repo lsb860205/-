@@ -193,6 +193,7 @@ export default function App() {
 
   // Firebase Handlers
   const saveSettings = async (s: GlobalSettings) => {
+    if (!auth || !db) return;
     let currentUser = auth?.currentUser;
     if (!currentUser) { 
       try {
@@ -212,6 +213,7 @@ export default function App() {
   };
 
   const addProject = async (p: Partial<Project>) => {
+    if (!auth || !db) return false;
     let currentUser = auth?.currentUser;
     if (!currentUser) { 
       try {
@@ -253,6 +255,7 @@ export default function App() {
   };
 
   const updateProject = async (id: string, p: Partial<Project>) => {
+    if (!auth || !db) return false;
     let currentUser = auth?.currentUser;
     if (!currentUser) {
       try {
@@ -298,6 +301,7 @@ export default function App() {
   };
 
   const deleteProject = async (id: string) => {
+    if (!auth || !db) return;
     if (!auth?.currentUser) {
       alert('관리자 인증이 필요합니다. 상단의 인증하기 버튼을 눌러주세요.');
       return;
@@ -322,6 +326,7 @@ export default function App() {
   };
 
   const reorderProjects = async (reorderedProjects: Project[]) => {
+    if (!auth || !db) return;
     if (!auth?.currentUser) return;
     
     try {
@@ -339,6 +344,7 @@ export default function App() {
   };
 
   const seedData = async () => {
+    if (!auth || !db) return;
     let currentUser = auth?.currentUser;
     if (!currentUser) { 
       try {

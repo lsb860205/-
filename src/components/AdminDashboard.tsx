@@ -240,6 +240,7 @@ export const AdminDashboard = ({
   };
 
   const handleLogin = async () => {
+    if (!auth) return;
     setAuthError(null);
     try {
       await signInWithPopup(auth, googleProvider);
