@@ -22,7 +22,13 @@ const DEFAULT_SETTINGS: GlobalSettings = {
   aboutHeadline: "Wavelet Studio",
   aboutSub: "제주의 빛과 결을 담는 스튜디오",
   aboutBody: "웨이블릿 스튜디오는 제주의 일상을 기록합니다. 우리는 사진 한 장에 담긴 빛과 그림자, 질감과 온도를 소중히 여깁니다. 그 순간들을 있는 그대로, 그러나 특별하게 담아냅니다.",
-  heroImages: []
+  heroImages: [],
+  placeTitle: 'PLACE',
+  placeDescription: '제주의 공간을 기록합니다. 카페, 숙소, 그리고 그 안의 이야기. 건축의 선과 공간이 머금은 온도를 사진이라는 언어로 번역합니다.',
+  foodTitle: 'FOOD',
+  foodDescription: '제주의 맛을 담습니다. 한 접시에 담긴 계절과 정성. 식재료 본연의 질감과 색감을 정제된 미학으로 포착합니다.',
+  natureTitle: 'NATURE',
+  natureDescription: '제주의 자연을 마주합니다. 바다, 오름, 빛의 순간들. 시시각각 변화하는 제주의 풍경 속에서 변하지 않는 아름다움을 기록합니다.'
 };
 
 const CATEGORY_META = {
@@ -426,7 +432,10 @@ export default function App() {
                 <CategoryPage 
                   type={currentPage}
                   projects={displayProjects.filter(p => p.category === currentPage)}
-                  meta={CATEGORY_META[currentPage as keyof typeof CATEGORY_META]}
+                  meta={{
+                    title: (settings as any)[`${currentPage}Title`] || currentPage.toUpperCase(),
+                    description: (settings as any)[`${currentPage}Description`] || ''
+                  }}
                   onNavigate={navigateTo}
                   onAdmin={() => navigateTo('admin')}
                 />

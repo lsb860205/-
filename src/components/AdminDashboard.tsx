@@ -30,7 +30,7 @@ export const AdminDashboard = ({
   onLogout
 }: AdminDashboardProps) => {
   const [localSettings, setLocalSettings] = useState(settings);
-  const [activeTab, setActiveTab] = useState<'home' | 'about' | 'projects'>('home');
+  const [activeTab, setActiveTab] = useState<'home' | 'about' | 'categories' | 'projects'>('home');
   const [isUploading, setIsUploading] = useState(false);
   const [uploadProgress, setUploadProgress] = useState({ current: 0, total: 0 });
   
@@ -352,6 +352,12 @@ export const AdminDashboard = ({
             어바웃 설정
           </button>
           <button 
+            onClick={() => setActiveTab('categories')} 
+            className={`font-ui text-[11px] tracking-[0.2em] transition-all ${activeTab === 'categories' ? 'text-black border-b border-black pb-1' : 'text-gray-300'}`}
+          >
+            카테고리 관리
+          </button>
+          <button 
             onClick={() => setActiveTab('projects')} 
             className={`font-ui text-[11px] tracking-[0.2em] transition-all ${activeTab === 'projects' ? 'text-black border-b border-black pb-1' : 'text-gray-300'}`}
           >
@@ -506,6 +512,45 @@ export const AdminDashboard = ({
               </button>
             )}
           </div>
+          
+          <div className="flex gap-4 pt-6">
+            <button 
+              onClick={() => onSaveSettings(localSettings)}
+              className="bg-black text-white px-12 py-4 font-ui text-[11px] tracking-[0.2em] hover:bg-gray-800 transition-colors flex items-center gap-3 font-medium"
+            >
+              <Save size={16} /> 설정 저장하기
+            </button>
+          </div>
+        </motion.div>
+      )}
+
+      {activeTab === 'categories' && (
+        <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="flex flex-col gap-16">
+          {(['place', 'food', 'nature'] as const).map(cat => (
+            <div key={cat} className="flex flex-col gap-8 pb-10 border-b border-border last:border-0">
+              <h3 className="font-ui text-sm tracking-[0.2em] text-black uppercase font-bold">
+                {cat.toUpperCase()} 카테고리 설정
+              </h3>
+              <div className="flex flex-col gap-3">
+                <label className="font-ui text-[10px] tracking-widest text-gray-400 uppercase">타이틀</label>
+                <input 
+                  value={(localSettings as any)[`${cat}Title`] || ''} 
+                  onChange={e => setLocalSettings(s => ({ ...s, [`${cat}Title`]: e.target.value }))} 
+                  className="border-b border-border py-2 focus:border-black outline-none font-ui text-xs tracking-widest transition-colors bg-transparent text-text-main uppercase"
+                  placeholder={cat.toUpperCase()}
+                />
+              </div>
+              <div className="flex flex-col gap-3">
+                <label className="font-ui text-[10px] tracking-widest text-gray-400 uppercase">설명 (Description)</label>
+                <textarea 
+                  rows={2} 
+                  value={(localSettings as any)[`${cat}Description`] || ''} 
+                  onChange={e => setLocalSettings(s => ({ ...s, [`${cat}Description`]: e.target.value }))} 
+                  className="border-b border-border py-2 focus:border-black outline-none font-kr text-sm resize-none transition-colors bg-transparent text-text-main"
+                />
+              </div>
+            </div>
+          ))}
           
           <div className="flex gap-4 pt-6">
             <button 
