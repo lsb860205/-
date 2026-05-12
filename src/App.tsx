@@ -1,3 +1,4 @@
+// v1.5 Production Sync
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { ArrowDown, LogIn } from 'lucide-react';
