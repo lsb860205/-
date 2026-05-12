@@ -92,9 +92,10 @@ export default function App() {
   useEffect(() => {
     let settingsLoaded = false;
     let projectsLoaded = false;
+    let isMounted = true;
 
     const checkLoaded = () => {
-      if (settingsLoaded && projectsLoaded) {
+      if (settingsLoaded && projectsLoaded && isMounted) {
         setIsInitialLoad(false);
       }
     };
@@ -104,7 +105,7 @@ export default function App() {
       settingsLoaded = true;
       checkLoaded();
     }, (err) => {
-      console.warn('Settings failed to load, using defaults', err);
+      console.warn('Settings failed to load', err);
       settingsLoaded = true;
       checkLoaded();
     });
@@ -120,12 +121,24 @@ export default function App() {
       projectsLoaded = true;
       checkLoaded();
     }, (err) => {
-      console.warn('Projects failed to load, using dummies', err);
+      console.warn('Projects failed to load', err);
       projectsLoaded = true;
       checkLoaded();
     });
 
-    return () => { unsubSettings(); unsubProjects(); };
+    const timeout = setTimeout(() => {
+      if (isMounted) {
+        console.warn('Loading timeout - forcing display');
+        setIsInitialLoad(false);
+      }
+    }, 4000);
+
+    return () => { 
+      isMounted = false;
+      unsubSettings(); 
+      unsubProjects(); 
+      clearTimeout(timeout); 
+    };
   }, []);
 
   const displayProjects = useMemo(() => projects.length > 0 ? projects : DUMMY_PROJECTS, [projects]);
@@ -382,9 +395,12 @@ export default function App() {
 
   if (isInitialLoad) {
     return (
-      <div className="min-h-screen bg-bg-white flex flex-col items-center justify-center space-y-4">
-        <div className="w-12 h-12 border-t-2 border-black/20 border-t-black rounded-full animate-spin" />
-        <p className="font-ui text-[10px] tracking-[0.2em] opacity-40 uppercase">Loading Experience v1.5.5</p>
+      <div className="min-h-screen bg-[#faf9f6] flex flex-col items-center justify-center space-y-6">
+        <div className="w-10 h-10 border-t-2 border-black/10 border-t-black rounded-full animate-spin" />
+        <div className="text-center">
+          <p className="font-ui text-[11px] tracking-[0.3em] opacity-30 uppercase font-light">Loading Wavelet Studio</p>
+          <p className="font-ui text-[8px] tracking-[0.1em] opacity-10 uppercase mt-2">v1.5.7-SYNC-VERIFIED</p>
+        </div>
       </div>
     );
   }
@@ -500,17 +516,19 @@ const HomeView = ({ settings, onNavigate, allProjects }: any) => {
 
   return (
     <div className="pt-[70px]">
-      <section className="relative h-[calc(100vh-70px)] overflow-hidden bg-bg-warm flex items-center justify-center">
+      <section className="relative h-[calc(100vh-70px)] overflow-hidden bg-[#e5e7eb] flex items-center justify-center">
         <AnimatePresence mode="wait">
-          <motion.div
-            key={heroIndex}
-            initial={{ opacity: 0, scale: 1.05 }}
-            animate={{ opacity: 1, scale: 1 }}
-            exit={{ opacity: 0 }}
-            transition={{ duration: 2.5, ease: "easeOut" }}
-            className="absolute inset-0 bg-cover bg-center"
-            style={{ backgroundImage: `url(${heroes[heroIndex]})` }}
-          />
+          {heroes.length > 0 && (
+            <motion.div
+              key={heroIndex}
+              initial={{ opacity: 0, scale: 1.05 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0 }}
+              transition={{ duration: 2.5, ease: "easeOut" }}
+              className="absolute inset-0 bg-cover bg-center"
+              style={{ backgroundImage: `url(${heroes[heroIndex]})` }}
+            />
+          )}
         </AnimatePresence>
         <div className="absolute inset-0 bg-black/10" />
         <div className="relative text-white text-center px-6 md:px-10">
@@ -530,7 +548,7 @@ const HomeView = ({ settings, onNavigate, allProjects }: any) => {
           >
             {settings.homeHeadlineSub || "Photography Studio in Jeju"}
           </motion.p>
-          <p className="fixed bottom-2 left-2 text-[8px] text-white/40 select-none z-50 bg-black/20 px-2 py-1 rounded">v1.5.5-SYNC</p>
+          <p className="fixed bottom-2 left-2 text-[8px] text-white/40 select-none z-50 bg-black/20 px-2 py-1 rounded">v1.5.7-RECOVERY</p>
         </div>
         <motion.div 
           animate={{ y: [0, 8, 0] }} 
