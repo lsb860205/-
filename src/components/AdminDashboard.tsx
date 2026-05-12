@@ -33,13 +33,14 @@ export const AdminDashboard = ({
 }: AdminDashboardProps) => {
   const [localSettings, setLocalSettings] = useState(settings);
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
+  const [isSavingSettings, setIsSavingSettings] = useState(false);
 
   // Sync only on initial load or if explicitly requested (to avoid flickers while typing)
   React.useEffect(() => {
-    if (!hasUnsavedChanges) {
+    if (!hasUnsavedChanges && !isSavingSettings) {
       setLocalSettings(settings);
     }
-  }, [settings, hasUnsavedChanges]);
+  }, [settings, hasUnsavedChanges, isSavingSettings]);
 
   const updateLocalSettings = (updater: (s: GlobalSettings) => GlobalSettings) => {
     setLocalSettings(updater);
@@ -47,8 +48,17 @@ export const AdminDashboard = ({
   };
 
   const handleSaveSettings = async () => {
-    await onSaveSettings(localSettings);
-    setHasUnsavedChanges(false);
+    if (isSavingSettings) return;
+    setIsSavingSettings(true);
+    try {
+      await onSaveSettings(localSettings);
+      setHasUnsavedChanges(false);
+      // Give some time for Firestore onSnapshot to propagate before enabling sync back
+      setTimeout(() => setIsSavingSettings(false), 2000);
+    } catch (err) {
+      console.error('Save failed:', err);
+      setIsSavingSettings(false);
+    }
   };
 
   const [activeTab, setActiveTab] = useState<'home' | 'about' | 'categories' | 'projects'>('home');
@@ -501,13 +511,16 @@ export const AdminDashboard = ({
           <div className="flex gap-4 pt-6">
             <button 
               onClick={handleSaveSettings}
-              className={`px-12 py-4 font-ui text-[11px] tracking-[0.2em] transition-all flex items-center gap-3 font-medium ${hasUnsavedChanges ? 'bg-emerald-600 text-white hover:bg-emerald-700 shadow-xl scale-[1.02]' : 'bg-black text-white hover:bg-gray-800'}`}
+              disabled={isSavingSettings}
+              className={`px-12 py-4 font-ui text-[11px] tracking-[0.2em] transition-all flex items-center gap-3 font-medium ${isSavingSettings ? 'bg-gray-400 cursor-wait' : (hasUnsavedChanges ? 'bg-emerald-600 text-white hover:bg-emerald-700 shadow-xl scale-[1.02]' : 'bg-black text-white hover:bg-gray-800')}`}
             >
-              <Save size={16} /> {hasUnsavedChanges ? '변경사항 저장하기*' : '설정 저장하기'}
+              {isSavingSettings ? <Loader2 className="animate-spin" size={16} /> : <Save size={16} />} 
+              {isSavingSettings ? '저장 중...' : (hasUnsavedChanges ? '변경사항 저장하기*' : '설정 저장하기')}
             </button>
             <button 
               onClick={onSeedData}
-              className="border border-border px-8 py-4 font-ui text-[11px] tracking-[0.2em] hover:bg-bg-warm transition-colors flex items-center gap-3 text-text-main"
+              disabled={isSavingSettings}
+              className="border border-border px-8 py-4 font-ui text-[11px] tracking-[0.2em] hover:bg-bg-warm transition-colors flex items-center gap-3 text-text-main disabled:opacity-50"
             >
               <RefreshCw size={16} /> 초기 데이터로 복구
             </button>
@@ -565,9 +578,11 @@ export const AdminDashboard = ({
           <div className="flex gap-4 pt-6">
             <button 
               onClick={handleSaveSettings}
-              className={`px-12 py-4 font-ui text-[11px] tracking-[0.2em] transition-all flex items-center gap-3 font-medium ${hasUnsavedChanges ? 'bg-emerald-600 text-white hover:bg-emerald-700 shadow-xl scale-[1.02]' : 'bg-black text-white hover:bg-gray-800'}`}
+              disabled={isSavingSettings}
+              className={`px-12 py-4 font-ui text-[11px] tracking-[0.2em] transition-all flex items-center gap-3 font-medium ${isSavingSettings ? 'bg-gray-400 cursor-wait' : (hasUnsavedChanges ? 'bg-emerald-600 text-white hover:bg-emerald-700 shadow-xl scale-[1.02]' : 'bg-black text-white hover:bg-gray-800')}`}
             >
-              <Save size={16} /> {hasUnsavedChanges ? '변경사항 저장하기*' : '설정 저장하기'}
+              {isSavingSettings ? <Loader2 className="animate-spin" size={16} /> : <Save size={16} />} 
+              {isSavingSettings ? '저장 중...' : (hasUnsavedChanges ? '변경사항 저장하기*' : '설정 저장하기')}
             </button>
           </div>
         </motion.div>
@@ -605,9 +620,11 @@ export const AdminDashboard = ({
           <div className="flex gap-4 pt-6">
             <button 
               onClick={handleSaveSettings}
-              className={`px-12 py-4 font-ui text-[11px] tracking-[0.2em] transition-all flex items-center gap-3 font-medium ${hasUnsavedChanges ? 'bg-emerald-600 text-white hover:bg-emerald-700 shadow-xl scale-[1.02]' : 'bg-black text-white hover:bg-gray-800'}`}
+              disabled={isSavingSettings}
+              className={`px-12 py-4 font-ui text-[11px] tracking-[0.2em] transition-all flex items-center gap-3 font-medium ${isSavingSettings ? 'bg-gray-400 cursor-wait' : (hasUnsavedChanges ? 'bg-emerald-600 text-white hover:bg-emerald-700 shadow-xl scale-[1.02]' : 'bg-black text-white hover:bg-gray-800')}`}
             >
-              <Save size={16} /> {hasUnsavedChanges ? '변경사항 저장하기*' : '설정 저장하기'}
+              {isSavingSettings ? <Loader2 className="animate-spin" size={16} /> : <Save size={16} />} 
+              {isSavingSettings ? '저장 중...' : (hasUnsavedChanges ? '변경사항 저장하기*' : '설정 저장하기')}
             </button>
           </div>
         </motion.div>
