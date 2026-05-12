@@ -34,7 +34,7 @@ export const Footer = ({ onAdmin }: { onAdmin?: () => void }) => (
       onClick={onAdmin}
       className="absolute bottom-4 right-6 text-[9px] opacity-10 hover:opacity-50 transition-opacity"
     >
-      <span className="mr-2 select-all text-green-500 font-bold">v1.5.2 - Sync Verified</span>
+      <span className="mr-2 select-all text-yellow-500 font-bold">v1.5.3 - REBUILT</span>
       ADMIN
     </button>
   </footer>
