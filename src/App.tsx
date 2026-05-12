@@ -17,6 +17,7 @@ import { AdminDashboard } from './components/AdminDashboard';
 
 const DEFAULT_SETTINGS: GlobalSettings = {
   homeHeadline: "Photography is the Poetry of Place",
+  homeHeadlineSub: "Photography Studio in Jeju",
   homeIntro: "웨이블릿 스튜디오는 제주의 고유한 빛과 결을 담습니다.\n사진은 찰나의 순간을 기록하는 것을 넘어, 그 공간과 음식, 자연이 품고 있는 이야기를 시처럼 풀어내는 과정이라 믿습니다.",
   aboutHeadline: "Wavelet Studio",
   aboutSub: "제주의 빛과 결을 담는 스튜디오",
@@ -513,7 +514,7 @@ const HomeView = ({ settings, onNavigate, allProjects }: any) => {
             transition={{ delay: 1.2, duration: 1.5 }}
             className="font-ui text-[10px] md:text-[11px] lg:text-[14px] tracking-[0.3em] md:tracking-[0.5em] font-light uppercase opacity-80"
           >
-            Photography Studio in Jeju
+            {settings.homeHeadlineSub || "Photography Studio in Jeju"}
           </motion.p>
         </div>
         <motion.div 

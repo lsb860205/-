@@ -274,7 +274,10 @@ export const AdminDashboard = ({
     <div className="pt-[110px] md:pt-[140px] px-5 sm:px-6 md:px-10 pb-32 max-w-[1200px] mx-auto min-h-screen">
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6 md:gap-8 mb-12 md:mb-16">
         <div className="flex flex-col gap-2">
-          <h1 className="font-ui text-xl md:text-3xl tracking-tighter font-light">관리자 대시보드</h1>
+          <h1 className="font-ui text-xl md:text-3xl tracking-tighter font-light flex items-center gap-3">
+            관리자 대시보드
+            <span className="text-[10px] font-mono text-gray-300 font-normal opacity-50">v1.2</span>
+          </h1>
           <div className="flex items-center gap-2">
             <div className={`w-2 h-2 rounded-full shadow-sm ${auth.currentUser ? 'bg-green-500 animate-pulse' : 'bg-red-500'}`} />
             <span className="font-ui text-[10px] tracking-widest text-text-sub uppercase font-bold">
@@ -289,29 +292,47 @@ export const AdminDashboard = ({
               </button>
             )}
             {authError && (
-              <div className="flex flex-col ml-4 p-4 bg-red-50 border border-red-200 rounded-md shadow-sm">
-                <span className="text-red-600 font-kr text-[12px] font-bold mb-1">인증 에러가 발생했습니다.</span>
-                <span className="text-gray-600 font-kr text-[10px] mb-3">Firebase에서 현재 도메인을 '승인된 도메인'으로 추가해주셔야 합니다.</span>
+              <div className="flex flex-col ml-4 p-6 bg-blue-50 border-2 border-blue-200 rounded-lg shadow-xl animate-in fade-in slide-in-from-top-4 duration-500 max-w-md">
+                <div className="flex items-center gap-2 mb-4">
+                  <div className="w-3 h-3 bg-blue-500 rounded-full animate-pulse" />
+                  <h3 className="text-blue-900 font-kr text-[14px] font-extrabold pb-0.5 border-b-2 border-blue-200">중요: Firebase 도메인 승인 필요</h3>
+                </div>
                 
-                <div className="flex flex-col gap-2">
-                  <span className="text-gray-500 font-kr text-[9px] uppercase tracking-wider">추가할 도메인:</span>
-                  <div className="flex items-center gap-2">
-                    <code className="text-blue-700 font-mono text-[12px] bg-white border border-blue-100 px-3 py-1.5 rounded font-bold shadow-sm">{window.location.hostname}</code>
-                    <button 
-                      onClick={() => {
-                        navigator.clipboard.writeText(window.location.hostname);
-                        alert('도메인이 복사되었습니다.');
-                      }}
-                      className="text-[9px] font-kr bg-blue-600 text-white px-2 py-1.5 rounded hover:bg-blue-700 transition-colors uppercase font-bold"
-                    >
-                      복사하기
-                    </button>
+                <p className="text-blue-800 font-kr text-[11px] leading-relaxed mb-5">
+                  현재 접속 중인 도메인이 Firebase에서 승인되지 않았습니다.<br/>
+                  아래 주소를 복사하여 Firebase 콘솔 <span className="font-bold">{"설정 > 승인된 도메인"}</span>에 추가해 주세요.
+                </p>
+                
+                <div className="bg-white p-4 rounded-md border border-blue-100 shadow-inner mb-5">
+                  <div className="flex flex-col gap-2">
+                    <div className="flex items-center justify-between">
+                      <span className="text-blue-400 font-kr text-[9px] font-bold uppercase tracking-widest">Authorized Domain</span>
+                      <span className="text-[9px] bg-blue-100 text-blue-600 px-2 py-0.5 rounded font-bold">COPY THIS</span>
+                    </div>
+                    <div className="flex items-center gap-3 mt-1">
+                      <code className="flex-1 text-blue-700 font-mono text-[13px] font-black break-all select-all">{window.location.hostname}</code>
+                      <button 
+                        onClick={() => {
+                          const hostname = window.location.hostname;
+                          navigator.clipboard.writeText(hostname).then(() => {
+                            alert(`[${hostname}] 도메인이 복사되었습니다.\n\nFirebase 콘솔의 '승인된 도메인' 리스트에 추가해 주세요.`);
+                          });
+                        }}
+                        className="whitespace-nowrap font-kr text-[11px] bg-blue-600 text-white px-4 py-2.5 rounded-md hover:bg-blue-700 active:scale-95 transition-all shadow-md font-black ring-4 ring-blue-100"
+                      >
+                        주소 복사하기
+                      </button>
+                    </div>
                   </div>
                 </div>
 
-                <div className="mt-4 pt-3 border-t border-red-100">
-                  <span className="text-gray-400 font-kr text-[9px] block mb-1">상세 에러 내용:</span>
-                  <code className="text-[9px] text-red-400 font-mono">{authError}</code>
+                <div className="pt-4 border-t border-blue-100">
+                  <div className="flex items-center gap-2 mb-2">
+                    <span className="text-blue-300 font-kr text-[9px] font-black uppercase">System Error Log</span>
+                  </div>
+                  <code className="text-[10px] text-blue-400 font-mono bg-blue-50/50 p-2 block rounded border border-blue-50 overflow-x-auto whitespace-pre-wrap">
+                    {authError}
+                  </code>
                 </div>
               </div>
             )}
@@ -348,8 +369,12 @@ export const AdminDashboard = ({
       {activeTab === 'home' && (
         <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="flex flex-col gap-10">
           <div className="flex flex-col gap-3">
-            <label className="font-ui text-[10px] tracking-widest text-gray-400 uppercase">홈 메인 헤드라인</label>
+            <label className="font-ui text-[10px] tracking-widest text-gray-400 uppercase">홈 메인 헤드라인 (상단)</label>
             <input value={localSettings.homeHeadline} onChange={e => setLocalSettings(s => ({ ...s, homeHeadline: e.target.value }))} className="border-b border-border py-3 focus:border-black outline-none font-kr text-sm transition-colors bg-transparent text-text-main" />
+          </div>
+          <div className="flex flex-col gap-3">
+            <label className="font-ui text-[10px] tracking-widest text-gray-400 uppercase">홈 메인 배경 문구 (하단)</label>
+            <input value={localSettings.homeHeadlineSub || ''} onChange={e => setLocalSettings(s => ({ ...s, homeHeadlineSub: e.target.value }))} className="border-b border-border py-3 focus:border-black outline-none font-kr text-sm transition-colors bg-transparent text-text-main" placeholder="Photography Studio in Jeju" />
           </div>
           <div className="flex flex-col gap-3">
             <label className="font-ui text-[10px] tracking-widest text-gray-400 uppercase">홈 소개 문구</label>

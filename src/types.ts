@@ -13,6 +13,7 @@ export interface Project {
 
 export interface GlobalSettings {
   homeHeadline: string;
+  homeHeadlineSub?: string;
   homeIntro: string;
   aboutHeadline: string;
   aboutSub: string;
