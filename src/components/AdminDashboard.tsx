@@ -276,20 +276,44 @@ export const AdminDashboard = ({
         <div className="flex flex-col gap-2">
           <h1 className="font-ui text-xl md:text-3xl tracking-tighter font-light">관리자 대시보드</h1>
           <div className="flex items-center gap-2">
-            <div className={`w-1.5 h-1.5 rounded-full ${auth.currentUser ? 'bg-green-500' : 'bg-red-500'}`} />
-            <span className="font-ui text-[9px] tracking-widest text-text-sub uppercase">
-              {auth.currentUser ? `연결됨: ${auth.currentUser.email}` : '구글 인증이 필요합니다'}
+            <div className={`w-2 h-2 rounded-full shadow-sm ${auth.currentUser ? 'bg-green-500 animate-pulse' : 'bg-red-500'}`} />
+            <span className="font-ui text-[10px] tracking-widest text-text-sub uppercase font-bold">
+              {auth.currentUser ? `연결됨: ${auth.currentUser.email}` : '관리자 인증이 필요합니다'}
             </span>
             {!auth.currentUser && (
               <button 
                 onClick={handleLogin}
-                className="font-ui text-[10px] tracking-widest text-accent hover:text-black font-bold ml-2 uppercase underline underline-offset-4"
+                className="font-ui text-[11px] tracking-widest bg-black text-white px-3 py-1 rounded-sm hover:bg-zinc-800 transition-colors ml-2 uppercase font-bold"
               >
-                인증하기
+                인증하기 (Google Login)
               </button>
             )}
             {authError && (
-              <span className="text-red-500 font-kr text-[10px] ml-2">[{authError}]</span>
+              <div className="flex flex-col ml-4 p-4 bg-red-50 border border-red-200 rounded-md shadow-sm">
+                <span className="text-red-600 font-kr text-[12px] font-bold mb-1">인증 에러가 발생했습니다.</span>
+                <span className="text-gray-600 font-kr text-[10px] mb-3">Firebase에서 현재 도메인을 '승인된 도메인'으로 추가해주셔야 합니다.</span>
+                
+                <div className="flex flex-col gap-2">
+                  <span className="text-gray-500 font-kr text-[9px] uppercase tracking-wider">추가할 도메인:</span>
+                  <div className="flex items-center gap-2">
+                    <code className="text-blue-700 font-mono text-[12px] bg-white border border-blue-100 px-3 py-1.5 rounded font-bold shadow-sm">{window.location.hostname}</code>
+                    <button 
+                      onClick={() => {
+                        navigator.clipboard.writeText(window.location.hostname);
+                        alert('도메인이 복사되었습니다.');
+                      }}
+                      className="text-[9px] font-kr bg-blue-600 text-white px-2 py-1.5 rounded hover:bg-blue-700 transition-colors uppercase font-bold"
+                    >
+                      복사하기
+                    </button>
+                  </div>
+                </div>
+
+                <div className="mt-4 pt-3 border-t border-red-100">
+                  <span className="text-gray-400 font-kr text-[9px] block mb-1">상세 에러 내용:</span>
+                  <code className="text-[9px] text-red-400 font-mono">{authError}</code>
+                </div>
+              </div>
             )}
           </div>
         </div>
