@@ -25,8 +25,8 @@ const DEFAULT_SETTINGS: GlobalSettings = {
   aboutSub: "제주의 빛과 결을 담는 스튜디오",
   aboutBody: "웨이블릿 스튜디오는 제주의 일상을 기록합니다. 우리는 사진 한 장에 담긴 빛과 그림자, 질감과 온도를 소중히 여깁니다. 그 순간들을 있는 그대로, 그러나 특별하게 담아냅니다.",
   heroImages: [
-    "https://picsum.photos/1920/1080?random=1",
-    "https://picsum.photos/1920/1080?random=2"
+    "https://picsum.photos/seed/hero1/1920/1080",
+    "https://picsum.photos/seed/hero2/1920/1080"
   ],
   placeTitle: 'PLACE',
   placeDescription: '제주의 공간을 기록합니다. 카페, 숙소, 그리고 그 안의 이야기. 건축의 선과 공간이 머금은 온도를 사진이라는 언어로 번역합니다.',
@@ -48,14 +48,14 @@ const generateDummyProjects = (): Project[] => {
   
   categories.forEach((cat, ci) => {
     clients[cat].forEach((name, i) => {
-      const photoCount = 6 + Math.floor(Math.random() * 4);
+      const seed = `${cat}-${i}`;
       dummy.push({
         id: `dummy-${cat}-${i}`,
         category: cat,
         clientName: name,
         description: `${name} - 제주의 정서를 담은 ${cat === 'place' ? '공간' : cat === 'food' ? '미식' : '풍경'} 프로젝트입니다.`,
-        mainImage: `https://picsum.photos/800/1000?random=${ci * 10 + i}`,
-        photos: Array.from({ length: photoCount }, (_, pi) => `https://picsum.photos/1000/1400?random=${ci * 20 + i * 10 + pi}`),
+        mainImage: `https://picsum.photos/seed/main-${seed}/800/1000`,
+        photos: Array.from({ length: 8 }, (_, pi) => `https://picsum.photos/seed/photo-${seed}-${pi}/1000/1400`),
         order: i
       });
     });
@@ -72,9 +72,9 @@ export default function App() {
   
   const [isAdminLoggedIn, setIsAdminLoggedIn] = useState(false);
   const [password, setPassword] = useState('');
-  const [settings, setSettings] = useState<GlobalSettings>(DEFAULT_SETTINGS);
-  const [projects, setProjects] = useState<Project[]>([]);
-    const [isInitialLoad, setIsInitialLoad] = useState(true);
+  const [settings, setSettings] = useState<GlobalSettings | null>(null);
+  const [projects, setProjects] = useState<Project[] | null>(null);
+  const [isInitialLoad, setIsInitialLoad] = useState(true);
     const [user, setUser] = useState(auth?.currentUser);
 
     // Sync auth state
@@ -149,10 +149,14 @@ export default function App() {
     }, []);
 
   // Priority: Firebase Data > Default Settings/Projects
-  const displayProjects = useMemo(() => projects.length > 0 ? projects : DUMMY_PROJECTS, [projects]);
+  const displayProjects = useMemo(() => {
+    if (projects === null) return []; // Still loading
+    return projects.length > 0 ? projects : DUMMY_PROJECTS;
+  }, [projects]);
+
   const displaySettings = useMemo(() => ({
     ...DEFAULT_SETTINGS,
-    ...settings
+    ...(settings || {})
   }), [settings]);
 
   useEffect(() => {
@@ -374,10 +378,15 @@ export default function App() {
         
         // 2. Projects
         let globalOrder = 0;
-        for (const p of DUMMY_PROJECTS) {
+        const now = Date.now();
+        for (let i = 0; i < DUMMY_PROJECTS.length; i++) {
+          const p = DUMMY_PROJECTS[i];
+          const newId = `${now}-${i}`;
           const { photos, ...projectData } = p;
-          await setDoc(doc(db, 'projects', p.id), { 
+          
+          await setDoc(doc(db, 'projects', newId), { 
             ...projectData, 
+            id: newId, // Override the dummy ID
             photoCount: photos?.length || 0,
             order: globalOrder++, 
             createdAt: new Date().toISOString() 
@@ -385,15 +394,15 @@ export default function App() {
           
           if (photos && photos.length > 0) {
             const batch = writeBatch(db);
-            for (let i = 0; i < photos.length; i++) {
-              const photoId = i.toString().padStart(3, '0');
-              const photoDocRef = doc(db, `projects/${p.id}/gallery`, photoId);
-              batch.set(photoDocRef, { url: photos[i], order: i });
+            for (let j = 0; j < photos.length; j++) {
+              const photoId = j.toString().padStart(3, '0');
+              const photoDocRef = doc(db, `projects/${newId}/gallery`, photoId);
+              batch.set(photoDocRef, { url: photos[j], order: j });
             }
             await batch.commit();
           }
         }
-        alert('데이터 초기화가 완료되었습니다.');
+        alert('데이터 초기화가 완료되었습니다. 새로고침을 통해 확인해주세요.');
       } catch (err) {
         handleFirestoreError(err, OperationType.WRITE, 'projects');
       }
@@ -512,7 +521,7 @@ export default function App() {
             {currentPage === 'admin' && (
               <AdminDashboard 
                 settings={displaySettings}
-                projects={projects}
+                projects={projects || []}
                 onSaveSettings={saveSettings}
                 onAddProject={addProject}
                 onUpdateProject={updateProject}

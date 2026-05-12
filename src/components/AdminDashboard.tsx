@@ -6,7 +6,8 @@ import { Project, GlobalSettings } from '../types';
 import { CATEGORY_META } from '../constants';
 import { compressImage } from '../lib/imageUtils';
 import { getProjectSlug } from '../lib/slugUtils';
-import { auth, signInWithPopup, googleProvider } from '../firebase';
+import { auth, signInWithPopup, googleProvider, db } from '../firebase';
+import { collection, query, orderBy, getDocs } from 'firebase/firestore';
 
 interface AdminDashboardProps {
   settings: GlobalSettings;
@@ -279,8 +280,10 @@ export const AdminDashboard = ({
     }
   };
 
-  const handleEditProject = (project: Project) => {
+  const handleEditProject = async (project: Project) => {
     setEditingId(project.id);
+    
+    // Initial partial form
     setProjectForm({
       category: project.category,
       clientName: project.clientName,
@@ -288,6 +291,25 @@ export const AdminDashboard = ({
       mainImage: project.mainImage,
       photos: project.photos || []
     });
+
+    // Fetch full gallery if it's from Firebase
+    if (project.id && !project.id.startsWith('dummy-')) {
+      setIsUploading(true);
+      try {
+        const photosRef = collection(db, `projects/${project.id}/gallery`);
+        const q = query(photosRef, orderBy('order', 'asc'));
+        const snapshot = await getDocs(q);
+        const fetchedPhotos = snapshot.docs.map(doc => doc.data().url as string);
+        if (fetchedPhotos.length > 0) {
+          setProjectForm(prev => ({ ...prev, photos: fetchedPhotos }));
+        }
+      } catch (err) {
+        console.error('Failed to fetch gallery for edit:', err);
+      } finally {
+        setIsUploading(false);
+      }
+    }
+
     // Scroll to form
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
@@ -309,7 +331,7 @@ export const AdminDashboard = ({
         <div className="flex flex-col gap-2">
           <h1 className="font-ui text-xl md:text-3xl tracking-tighter font-light flex items-center gap-3">
             관리자 대시보드
-            <span className="text-[10px] font-mono text-gray-300 font-normal opacity-50">v2.0.0 - STABLE CORE</span>
+            <span className="text-[10px] font-mono text-gray-400 font-normal opacity-40 ml-2">1.8.0</span>
           </h1>
             <div className="flex flex-col gap-1">
             <div className="flex items-center gap-2">
