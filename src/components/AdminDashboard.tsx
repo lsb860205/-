@@ -276,7 +276,7 @@ export const AdminDashboard = ({
         <div className="flex flex-col gap-2">
           <h1 className="font-ui text-xl md:text-3xl tracking-tighter font-light flex items-center gap-3">
             관리자 대시보드
-            <span className="text-[10px] font-mono text-gray-300 font-normal opacity-50">v1.3 - Updated</span>
+            <span className="text-[10px] font-mono text-gray-300 font-normal opacity-50">v1.4 - Live</span>
           </h1>
           <div className="flex flex-col gap-1">
             <div className="flex items-center gap-2">
@@ -293,8 +293,19 @@ export const AdminDashboard = ({
                 </button>
               )}
             </div>
-            {window.location.hostname.includes('asia-northeast1.run.app') && (
-              <span className="text-[9px] text-gray-300 font-kr">현재 호스트: {window.location.hostname} (Firebase 승인 필요)</span>
+            {!auth.currentUser && window.location.hostname.includes('asia-northeast1.run.app') && (
+              <div className="flex items-center gap-2 mt-1">
+                <span className="text-[9px] text-blue-400 font-kr bg-blue-50 px-2 py-0.5 rounded border border-blue-100 flex items-center gap-1">
+                  <ExternalLink size={8} /> 
+                  로그인 안 될 때 등록할 주소: <span className="font-bold select-all">{window.location.hostname}</span>
+                </span>
+                <p className="text-[9px] text-gray-400 font-kr italic"> (로그인이 잘 된다면 무시하셔도 됩니다)</p>
+              </div>
+            )}
+            {auth.currentUser && (
+              <p className="text-[9px] text-gray-400 font-kr mt-1">
+                ※ 수정사항이 안 보이면 <span className="font-bold text-gray-600">Ctrl+Shift+R</span>을 눌러 새로고침 해주세요.
+              </p>
             )}
           </div>
         </div>
