@@ -1,3 +1,4 @@
+// Version 1.5 - Forced Sync Update
 import React, { useState, useRef } from 'react';
 import { motion } from 'motion/react';
 import { Plus, Trash2, Save, RefreshCw, X, Image as ImageIcon, Upload, Loader2, ChevronLeft, ChevronRight, ChevronUp, ChevronDown, ExternalLink } from 'lucide-react';
@@ -276,7 +277,7 @@ export const AdminDashboard = ({
         <div className="flex flex-col gap-2">
           <h1 className="font-ui text-xl md:text-3xl tracking-tighter font-light flex items-center gap-3">
             관리자 대시보드
-            <span className="text-[10px] font-mono text-gray-300 font-normal opacity-50">v1.4 - Live</span>
+            <span className="text-[10px] font-mono text-gray-300 font-normal opacity-50">v1.5 - Production Ready</span>
           </h1>
           <div className="flex flex-col gap-1">
             <div className="flex items-center gap-2">
