@@ -3,6 +3,7 @@ import React, { useState, useRef } from 'react';
 import { motion } from 'motion/react';
 import { Plus, Trash2, Save, RefreshCw, X, Image as ImageIcon, Upload, Loader2, ChevronLeft, ChevronRight, ChevronUp, ChevronDown, ExternalLink } from 'lucide-react';
 import { Project, GlobalSettings } from '../types';
+import { CATEGORY_META } from '../constants';
 import { compressImage } from '../lib/imageUtils';
 import { getProjectSlug } from '../lib/slugUtils';
 import { auth, signInWithPopup, googleProvider } from '../firebase';
@@ -296,7 +297,7 @@ export const AdminDashboard = ({
         <div className="flex flex-col gap-2">
           <h1 className="font-ui text-xl md:text-3xl tracking-tighter font-light flex items-center gap-3">
             관리자 대시보드
-            <span className="text-[10px] font-mono text-gray-300 font-normal opacity-50">v2.0.0 - STABLE CORE</span>
+            <span className="text-[10px] font-mono text-gray-300 font-normal opacity-50">v1.5 - Production Ready</span>
           </h1>
           <div className="flex flex-col gap-1">
             <div className="flex items-center gap-2">
@@ -580,7 +581,7 @@ export const AdminDashboard = ({
                   value={(localSettings as any)[`${cat}Title`] || ''} 
                   onChange={e => updateLocalSettings(s => ({ ...s, [`${cat}Title`]: e.target.value }))} 
                   className="border-b-2 border-black/10 py-3 focus:border-black outline-none font-ui text-[18px] tracking-widest transition-colors bg-transparent text-text-main uppercase"
-                  placeholder={cat.toUpperCase()}
+                  placeholder={(CATEGORY_META as any)[cat].title}
                 />
               </div>
               <div className="flex flex-col gap-3">
@@ -590,7 +591,7 @@ export const AdminDashboard = ({
                   value={(localSettings as any)[`${cat}Description`] || ''} 
                   onChange={e => updateLocalSettings(s => ({ ...s, [`${cat}Description`]: e.target.value }))} 
                   className="border-b border-border py-3 focus:border-black outline-none font-kr text-sm resize-none transition-colors bg-transparent text-text-main leading-relaxed"
-                  placeholder={`${cat.toUpperCase()} 카테고리를 설명하는 문구를 입력하세요.`}
+                  placeholder={(CATEGORY_META as any)[cat].description}
                 />
               </div>
             </div>

@@ -1,4 +1,4 @@
-// v2.0 Production Core
+// v1.6 Production Sync
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { ArrowDown, LogIn } from 'lucide-react';
@@ -11,6 +11,7 @@ import {
 } from './firebase';
 import { Page, Project, GlobalSettings } from './types';
 import { getProjectSlug } from './lib/slugUtils';
+import { CATEGORY_META } from './constants';
 import { Navbar } from './components/Navbar';
 import { Footer } from './components/Footer';
 import { CategoryPage, ProjectPage } from './components/GalleryViews';
@@ -32,20 +33,6 @@ const DEFAULT_SETTINGS: GlobalSettings = {
   natureDescription: '제주의 자연을 마주합니다. 바다, 오름, 빛의 순간들. 시시각각 변화하는 제주의 풍경 속에서 변하지 않는 아름다움을 기록합니다.'
 };
 
-const CATEGORY_META = {
-  place: { 
-    title: 'PLACE', 
-    description: '제주의 공간을 기록합니다. 카페, 숙소, 그리고 그 안의 이야기. 건축의 선과 공간이 머금은 온도를 사진이라는 언어로 번역합니다.' 
-  },
-  food: { 
-    title: 'FOOD', 
-    description: '제주의 맛을 담습니다. 한 접시에 담긴 계절과 정성. 식재료 본연의 질감과 색감을 정제된 미학으로 포착합니다.' 
-  },
-  nature: { 
-    title: 'NATURE', 
-    description: '제주의 자연을 마주합니다. 바다, 오름, 빛의 순간들. 시시각각 변화하는 제주의 풍경 속에서 변하지 않는 아름다움을 기록합니다.' 
-  }
-};
 
 const generateDummyProjects = (): Project[] => {
   const dummy: Project[] = [];
@@ -85,10 +72,11 @@ export default function App() {
   const [settings, setSettings] = useState<GlobalSettings>(DEFAULT_SETTINGS);
   const [projects, setProjects] = useState<Project[]>([]);
     const [isInitialLoad, setIsInitialLoad] = useState(true);
-    const [user, setUser] = useState(auth.currentUser);
+    const [user, setUser] = useState(auth?.currentUser);
 
     // Sync auth state
     useEffect(() => {
+      if (!auth) return;
       const unsub = auth.onAuthStateChanged(u => {
         setUser(u);
         if (u) setIsAdminLoggedIn(true); // Auto-login if auth exists
@@ -97,7 +85,7 @@ export default function App() {
     }, []);
 
     useEffect(() => {
-      if (!db) {
+      if (!auth || !db) {
         setIsInitialLoad(false);
         return;
       }
@@ -113,7 +101,9 @@ export default function App() {
       };
 
       const unsubSettings = onSnapshot(doc(db, 'settings', 'main'), (snap) => {
-        if (snap.exists()) setSettings(snap.data() as GlobalSettings);
+        if (snap.exists()) {
+          setSettings(snap.data() as GlobalSettings);
+        }
         settingsLoaded = true;
         checkLoaded();
       }, (err) => {
@@ -138,11 +128,12 @@ export default function App() {
         checkLoaded();
       });
 
+      // Increased timeout for more reliable initial data fetch
       const timeout = setTimeout(() => {
         if (isMounted && isInitialLoad) {
           setIsInitialLoad(false);
         }
-      }, 4000);
+      }, 6000);
 
       return () => { 
         isMounted = false;
@@ -152,7 +143,12 @@ export default function App() {
       };
     }, []);
 
+  // Priority: Firebase Data > Default Settings/Projects
   const displayProjects = useMemo(() => projects.length > 0 ? projects : DUMMY_PROJECTS, [projects]);
+  const displaySettings = useMemo(() => ({
+    ...DEFAULT_SETTINGS,
+    ...settings
+  }), [settings]);
 
   useEffect(() => {
     const handleHash = () => {
@@ -457,7 +453,7 @@ export default function App() {
           >
             {currentPage === 'home' && (
               <HomeView 
-                settings={settings} 
+                settings={displaySettings} 
                 onNavigate={navigateTo} 
                 allProjects={displayProjects} 
               />
@@ -477,8 +473,8 @@ export default function App() {
                   type={currentPage}
                   projects={displayProjects.filter(p => p.category === currentPage)}
                   meta={{
-                    title: (settings as any)[`${currentPage}Title`] || (CATEGORY_META as any)[currentPage].title,
-                    description: (settings as any)[`${currentPage}Description`] || (CATEGORY_META as any)[currentPage].description
+                    title: (displaySettings as any)[`${currentPage}Title`] || (CATEGORY_META as any)[currentPage].title,
+                    description: (displaySettings as any)[`${currentPage}Description`] || (CATEGORY_META as any)[currentPage].description
                   }}
                   onNavigate={navigateTo}
                   onAdmin={() => navigateTo('admin')}
@@ -487,12 +483,12 @@ export default function App() {
             )}
 
             {currentPage === 'about' && (
-              <AboutView settings={settings} onNavigate={navigateTo} />
+              <AboutView settings={displaySettings} onNavigate={navigateTo} />
             )}
 
             {currentPage === 'admin' && (
               <AdminDashboard 
-                settings={settings}
+                settings={displaySettings}
                 projects={projects}
                 onSaveSettings={saveSettings}
                 onAddProject={addProject}
