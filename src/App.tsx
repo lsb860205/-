@@ -1,4 +1,4 @@
-// v1.5 Production Sync
+// v2.0 Production Core
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { ArrowDown, LogIn } from 'lucide-react';
@@ -87,9 +87,12 @@ export default function App() {
     const [isInitialLoad, setIsInitialLoad] = useState(true);
     const [user, setUser] = useState(auth.currentUser);
 
-    // Sync user state
+    // Sync auth state
     useEffect(() => {
-      const unsub = auth.onAuthStateChanged(u => setUser(u));
+      const unsub = auth.onAuthStateChanged(u => {
+        setUser(u);
+        if (u) setIsAdminLoggedIn(true); // Auto-login if auth exists
+      });
       return () => unsub();
     }, []);
 
@@ -109,47 +112,37 @@ export default function App() {
         }
       };
 
-      let unsubSettings: () => void = () => {};
-      let unsubProjects: () => void = () => {};
+      const unsubSettings = onSnapshot(doc(db, 'settings', 'main'), (snap) => {
+        if (snap.exists()) setSettings(snap.data() as GlobalSettings);
+        settingsLoaded = true;
+        checkLoaded();
+      }, (err) => {
+        console.warn('Settings sync offline', err);
+        settingsLoaded = true;
+        checkLoaded();
+      });
 
-      try {
-        unsubSettings = onSnapshot(doc(db, 'settings', 'main'), (snap) => {
-          if (snap.exists()) setSettings(snap.data() as GlobalSettings);
-          settingsLoaded = true;
-          checkLoaded();
-        }, (err) => {
-          console.warn('Settings failed to load', err);
-          settingsLoaded = true;
-          checkLoaded();
+      const unsubProjects = onSnapshot(collection(db, 'projects'), (snap) => {
+        const items = snap.docs.map(d => ({ id: d.id, ...d.data() })) as Project[];
+        items.sort((a, b) => {
+          const diff = (a.order ?? 0) - (b.order ?? 0);
+          if (diff !== 0) return diff;
+          return a.id.localeCompare(b.id);
         });
+        setProjects(items);
+        projectsLoaded = true;
+        checkLoaded();
+      }, (err) => {
+        console.warn('Projects sync offline', err);
+        projectsLoaded = true;
+        checkLoaded();
+      });
 
-        unsubProjects = onSnapshot(collection(db, 'projects'), (snap) => {
-          const items = snap.docs.map(d => ({ id: d.id, ...d.data() })) as Project[];
-          items.sort((a, b) => {
-            const diff = (a.order ?? 0) - (b.order ?? 0);
-            if (diff !== 0) return diff;
-            return a.id.localeCompare(b.id);
-          });
-          setProjects(items);
-          projectsLoaded = true;
-          checkLoaded();
-        }, (err) => {
-          console.warn('Projects failed to load', err);
-          projectsLoaded = true;
-          checkLoaded();
-        });
-      } catch (err) {
-        console.error('Snapshot registration failed', err);
-        setIsInitialLoad(false);
-      }
-
-      // More patient timeout for Firebase sync (3 seconds)
       const timeout = setTimeout(() => {
         if (isMounted && isInitialLoad) {
-          console.warn('Firebase sync delayed - entering visual fallback');
           setIsInitialLoad(false);
         }
-      }, 3000);
+      }, 4000);
 
       return () => { 
         isMounted = false;
@@ -429,7 +422,7 @@ export default function App() {
               className="absolute inset-0 bg-accent w-full"
             />
           </div>
-          <p className="font-ui text-[8px] tracking-[0.2em] opacity-40 uppercase">Establishing Secure Connection</p>
+          <p className="font-ui text-[8px] tracking-[0.2em] opacity-40 uppercase">Synchronizing with Firebase Cloud</p>
         </div>
       </div>
     );
@@ -590,7 +583,7 @@ const HomeView = ({ settings, onNavigate, allProjects }: any) => {
 
       <section className="px-6 md:px-10 py-16 md:py-24 lg:py-40 grid lg:grid-cols-2 gap-10 lg:gap-24 max-w-[1200px] mx-auto items-start lg:items-center">
         <h2 className="font-ui text-[26px] sm:text-[32px] md:text-[40px] lg:text-[48px] text-text-main leading-[1.2] font-light tracking-tight lg:max-w-[500px]">
-          Wavelet<br/>Studio.
+          {settings.aboutHeadline || 'Wavelet Studio.'}
         </h2>
         <div className="flex flex-col gap-6">
           <div className="w-12 h-[1px] bg-accent/30 hidden lg:block" />

@@ -31,11 +31,24 @@ export const AdminDashboard = ({
   onLogout
 }: AdminDashboardProps) => {
   const [localSettings, setLocalSettings] = useState(settings);
+  const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
 
-  // Sync localSettings when props update (Firebase load)
+  // Sync only on initial load or if explicitly requested (to avoid flickers while typing)
   React.useEffect(() => {
-    setLocalSettings(settings);
-  }, [settings]);
+    if (!hasUnsavedChanges) {
+      setLocalSettings(settings);
+    }
+  }, [settings, hasUnsavedChanges]);
+
+  const updateLocalSettings = (updater: (s: GlobalSettings) => GlobalSettings) => {
+    setLocalSettings(updater);
+    setHasUnsavedChanges(true);
+  };
+
+  const handleSaveSettings = async () => {
+    await onSaveSettings(localSettings);
+    setHasUnsavedChanges(false);
+  };
 
   const [activeTab, setActiveTab] = useState<'home' | 'about' | 'categories' | 'projects'>('home');
   const [isUploading, setIsUploading] = useState(false);
@@ -283,7 +296,7 @@ export const AdminDashboard = ({
         <div className="flex flex-col gap-2">
           <h1 className="font-ui text-xl md:text-3xl tracking-tighter font-light flex items-center gap-3">
             관리자 대시보드
-            <span className="text-[10px] font-mono text-gray-300 font-normal opacity-50">v1.5 - Production Ready</span>
+            <span className="text-[10px] font-mono text-gray-300 font-normal opacity-50">v2.0.0 - STABLE CORE</span>
           </h1>
           <div className="flex flex-col gap-1">
             <div className="flex items-center gap-2">
@@ -401,16 +414,20 @@ export const AdminDashboard = ({
       {activeTab === 'home' && (
         <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="flex flex-col gap-10">
           <div className="flex flex-col gap-3">
-            <label className="font-ui text-[10px] tracking-widest text-gray-400 uppercase">홈 메인 헤드라인 (상단)</label>
-            <input value={localSettings.homeHeadline} onChange={e => setLocalSettings(s => ({ ...s, homeHeadline: e.target.value }))} className="border-b border-border py-3 focus:border-black outline-none font-kr text-sm transition-colors bg-transparent text-text-main" />
+            <label className="font-ui text-[10px] tracking-widest text-gray-400 uppercase">홈 메인 제목 (Wavelet Studio 부분)</label>
+            <input value={localSettings.aboutHeadline || ''} onChange={e => updateLocalSettings(s => ({ ...s, aboutHeadline: e.target.value }))} className="border-b border-border py-3 focus:border-black outline-none font-kr text-sm transition-colors bg-transparent text-text-main" placeholder="Wavelet Studio." />
+          </div>
+          <div className="flex flex-col gap-3">
+            <label className="font-ui text-[10px] tracking-widest text-gray-400 uppercase">홈 메인 헤드라인 (상단 이미지 위)</label>
+            <input value={localSettings.homeHeadline} onChange={e => updateLocalSettings(s => ({ ...s, homeHeadline: e.target.value }))} className="border-b border-border py-3 focus:border-black outline-none font-kr text-sm transition-colors bg-transparent text-text-main" />
           </div>
           <div className="flex flex-col gap-3">
             <label className="font-ui text-[10px] tracking-widest text-gray-400 uppercase">홈 메인 배경 문구 (하단)</label>
-            <input value={localSettings.homeHeadlineSub || ''} onChange={e => setLocalSettings(s => ({ ...s, homeHeadlineSub: e.target.value }))} className="border-b border-border py-3 focus:border-black outline-none font-kr text-sm transition-colors bg-transparent text-text-main" placeholder="Photography Studio in Jeju" />
+            <input value={localSettings.homeHeadlineSub || ''} onChange={e => updateLocalSettings(s => ({ ...s, homeHeadlineSub: e.target.value }))} className="border-b border-border py-3 focus:border-black outline-none font-kr text-sm transition-colors bg-transparent text-text-main" placeholder="Photography Studio in Jeju" />
           </div>
           <div className="flex flex-col gap-3">
             <label className="font-ui text-[10px] tracking-widest text-gray-400 uppercase">홈 소개 문구</label>
-            <textarea rows={3} value={localSettings.homeIntro} onChange={e => setLocalSettings(s => ({ ...s, homeIntro: e.target.value }))} className="border-b border-border py-3 focus:border-black outline-none font-kr text-sm resize-none transition-colors bg-transparent text-text-main" />
+            <textarea rows={3} value={localSettings.homeIntro} onChange={e => updateLocalSettings(s => ({ ...s, homeIntro: e.target.value }))} className="border-b border-border py-3 focus:border-black outline-none font-kr text-sm resize-none transition-colors bg-transparent text-text-main" />
           </div>
           
           <div className="flex flex-col gap-4">
@@ -481,10 +498,10 @@ export const AdminDashboard = ({
 
           <div className="flex gap-4 pt-6">
             <button 
-              onClick={() => onSaveSettings(localSettings)}
-              className="bg-black text-white px-12 py-4 font-ui text-[11px] tracking-[0.2em] hover:bg-gray-800 transition-colors flex items-center gap-3 font-medium"
+              onClick={handleSaveSettings}
+              className={`px-12 py-4 font-ui text-[11px] tracking-[0.2em] transition-all flex items-center gap-3 font-medium ${hasUnsavedChanges ? 'bg-emerald-600 text-white hover:bg-emerald-700 shadow-xl scale-[1.02]' : 'bg-black text-white hover:bg-gray-800'}`}
             >
-              <Save size={16} /> 설정 저장하기
+              <Save size={16} /> {hasUnsavedChanges ? '변경사항 저장하기*' : '설정 저장하기'}
             </button>
             <button 
               onClick={onSeedData}
@@ -500,11 +517,11 @@ export const AdminDashboard = ({
         <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="flex flex-col gap-10">
           <div className="flex flex-col gap-3">
             <label className="font-ui text-[10px] tracking-widest text-gray-400 uppercase">어바웃 페이지 부제</label>
-            <input value={localSettings.aboutSub} onChange={e => setLocalSettings(s => ({ ...s, aboutSub: e.target.value }))} className="border-b border-border py-3 focus:border-black outline-none font-kr text-sm transition-colors bg-transparent text-text-main" />
+            <input value={localSettings.aboutSub} onChange={e => updateLocalSettings(s => ({ ...s, aboutSub: e.target.value }))} className="border-b border-border py-3 focus:border-black outline-none font-kr text-sm transition-colors bg-transparent text-text-main" />
           </div>
           <div className="flex flex-col gap-3">
             <label className="font-ui text-[10px] tracking-widest text-gray-400 uppercase">어바웃 본문 내용</label>
-            <textarea rows={10} value={localSettings.aboutBody} onChange={e => setLocalSettings(s => ({ ...s, aboutBody: e.target.value }))} className="border-b border-border py-3 focus:border-black outline-none font-kr text-sm resize-none transition-colors bg-transparent text-text-main" />
+            <textarea rows={10} value={localSettings.aboutBody} onChange={e => updateLocalSettings(s => ({ ...s, aboutBody: e.target.value }))} className="border-b border-border py-3 focus:border-black outline-none font-kr text-sm resize-none transition-colors bg-transparent text-text-main" />
           </div>
 
           <div className="flex flex-col gap-4">
@@ -531,7 +548,7 @@ export const AdminDashboard = ({
             </div>
             {localSettings.aboutImage && (
               <button 
-                onClick={() => setLocalSettings(s => ({ ...s, aboutImage: undefined }))}
+                onClick={() => updateLocalSettings(s => ({ ...s, aboutImage: undefined }))}
                 className="text-red-400 text-[10px] tracking-widest hover:text-red-600 self-start"
               >
                 사진 삭제
@@ -541,10 +558,10 @@ export const AdminDashboard = ({
           
           <div className="flex gap-4 pt-6">
             <button 
-              onClick={() => onSaveSettings(localSettings)}
-              className="bg-black text-white px-12 py-4 font-ui text-[11px] tracking-[0.2em] hover:bg-gray-800 transition-colors flex items-center gap-3 font-medium"
+              onClick={handleSaveSettings}
+              className={`px-12 py-4 font-ui text-[11px] tracking-[0.2em] transition-all flex items-center gap-3 font-medium ${hasUnsavedChanges ? 'bg-emerald-600 text-white hover:bg-emerald-700 shadow-xl scale-[1.02]' : 'bg-black text-white hover:bg-gray-800'}`}
             >
-              <Save size={16} /> 설정 저장하기
+              <Save size={16} /> {hasUnsavedChanges ? '변경사항 저장하기*' : '설정 저장하기'}
             </button>
           </div>
         </motion.div>
@@ -558,21 +575,22 @@ export const AdminDashboard = ({
                 {cat.toUpperCase()} 카테고리 설정
               </h3>
               <div className="flex flex-col gap-3">
-                <label className="font-ui text-[10px] tracking-widest text-gray-400 uppercase">타이틀</label>
+                <label className="font-ui text-[10px] tracking-widest text-gray-400 uppercase font-black">대제목 (페이지 상단 크게 표시될 제목)</label>
                 <input 
                   value={(localSettings as any)[`${cat}Title`] || ''} 
-                  onChange={e => setLocalSettings(s => ({ ...s, [`${cat}Title`]: e.target.value }))} 
-                  className="border-b border-border py-2 focus:border-black outline-none font-ui text-xs tracking-widest transition-colors bg-transparent text-text-main uppercase"
+                  onChange={e => updateLocalSettings(s => ({ ...s, [`${cat}Title`]: e.target.value }))} 
+                  className="border-b-2 border-black/10 py-3 focus:border-black outline-none font-ui text-[18px] tracking-widest transition-colors bg-transparent text-text-main uppercase"
                   placeholder={cat.toUpperCase()}
                 />
               </div>
               <div className="flex flex-col gap-3">
-                <label className="font-ui text-[10px] tracking-widest text-gray-400 uppercase">설명 (Description)</label>
+                <label className="font-ui text-[10px] tracking-widest text-gray-400 uppercase">카테고리 설명 (Description - 페이지 소개 문구)</label>
                 <textarea 
-                  rows={2} 
+                  rows={4} 
                   value={(localSettings as any)[`${cat}Description`] || ''} 
-                  onChange={e => setLocalSettings(s => ({ ...s, [`${cat}Description`]: e.target.value }))} 
-                  className="border-b border-border py-2 focus:border-black outline-none font-kr text-sm resize-none transition-colors bg-transparent text-text-main"
+                  onChange={e => updateLocalSettings(s => ({ ...s, [`${cat}Description`]: e.target.value }))} 
+                  className="border-b border-border py-3 focus:border-black outline-none font-kr text-sm resize-none transition-colors bg-transparent text-text-main leading-relaxed"
+                  placeholder={`${cat.toUpperCase()} 카테고리를 설명하는 문구를 입력하세요.`}
                 />
               </div>
             </div>
@@ -580,10 +598,10 @@ export const AdminDashboard = ({
           
           <div className="flex gap-4 pt-6">
             <button 
-              onClick={() => onSaveSettings(localSettings)}
-              className="bg-black text-white px-12 py-4 font-ui text-[11px] tracking-[0.2em] hover:bg-gray-800 transition-colors flex items-center gap-3 font-medium"
+              onClick={handleSaveSettings}
+              className={`px-12 py-4 font-ui text-[11px] tracking-[0.2em] transition-all flex items-center gap-3 font-medium ${hasUnsavedChanges ? 'bg-emerald-600 text-white hover:bg-emerald-700 shadow-xl scale-[1.02]' : 'bg-black text-white hover:bg-gray-800'}`}
             >
-              <Save size={16} /> 설정 저장하기
+              <Save size={16} /> {hasUnsavedChanges ? '변경사항 저장하기*' : '설정 저장하기'}
             </button>
           </div>
         </motion.div>
