@@ -254,7 +254,8 @@ export const AdminDashboard = ({
     setAuthError(null);
     try {
       await signInWithPopup(auth, googleProvider);
-    } catch (err) {
+    } catch (err: any) {
+      if (err.code === 'auth/popup-closed-by-user') return;
       console.error('Login error:', err);
       setAuthError(err instanceof Error ? err.message : '인증 실패');
     }

@@ -203,7 +203,8 @@ export default function App() {
       try {
         const result = await signInWithPopup(auth, googleProvider); 
         currentUser = result.user;
-      } catch (err) {
+      } catch (err: any) {
+        if (err.code === 'auth/popup-closed-by-user') return;
         console.error('Login failed', err);
         alert('저장을 위해 관리자 인증이 필요합니다.');
         return;
@@ -227,7 +228,8 @@ export default function App() {
       try {
         const result = await signInWithPopup(auth, googleProvider); 
         currentUser = result.user;
-      } catch (err) {
+      } catch (err: any) {
+        if (err.code === 'auth/popup-closed-by-user') return false;
         console.error('Login failed', err);
         return false;
       }
@@ -269,7 +271,8 @@ export default function App() {
       try {
         const result = await signInWithPopup(auth, googleProvider);
         currentUser = result.user;
-      } catch (err) {
+      } catch (err: any) {
+        if (err.code === 'auth/popup-closed-by-user') return false;
         console.error('Login failed', err);
         return false;
       }
@@ -358,7 +361,8 @@ export default function App() {
       try {
         const result = await signInWithPopup(auth, googleProvider); 
         currentUser = result.user;
-      } catch (err) {
+      } catch (err: any) {
+        if (err.code === 'auth/popup-closed-by-user') return;
         console.error('Login failed', err);
         return;
       }
