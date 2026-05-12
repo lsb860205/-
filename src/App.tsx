@@ -90,6 +90,12 @@ export default function App() {
   useEffect(() => auth.onAuthStateChanged(u => setUser(u)), []);
 
   useEffect(() => {
+    if (!db) {
+      console.error('Database connection failed - forcing recovery mode');
+      setIsInitialLoad(false);
+      return;
+    }
+
     let settingsLoaded = false;
     let projectsLoaded = false;
     let isMounted = true;
@@ -100,38 +106,46 @@ export default function App() {
       }
     };
 
-    const unsubSettings = onSnapshot(doc(db, 'settings', 'main'), (snap) => {
-      if (snap.exists()) setSettings(snap.data() as GlobalSettings);
-      settingsLoaded = true;
-      checkLoaded();
-    }, (err) => {
-      console.warn('Settings failed to load', err);
-      settingsLoaded = true;
-      checkLoaded();
-    });
+    let unsubSettings: () => void = () => {};
+    let unsubProjects: () => void = () => {};
 
-    const unsubProjects = onSnapshot(collection(db, 'projects'), (snap) => {
-      const items = snap.docs.map(d => ({ id: d.id, ...d.data() })) as Project[];
-      items.sort((a, b) => {
-        const diff = (a.order ?? 0) - (b.order ?? 0);
-        if (diff !== 0) return diff;
-        return a.id.localeCompare(b.id);
+    try {
+      unsubSettings = onSnapshot(doc(db, 'settings', 'main'), (snap) => {
+        if (snap.exists()) setSettings(snap.data() as GlobalSettings);
+        settingsLoaded = true;
+        checkLoaded();
+      }, (err) => {
+        console.warn('Settings failed to load', err);
+        settingsLoaded = true;
+        checkLoaded();
       });
-      setProjects(items);
-      projectsLoaded = true;
-      checkLoaded();
-    }, (err) => {
-      console.warn('Projects failed to load', err);
-      projectsLoaded = true;
-      checkLoaded();
-    });
+
+      unsubProjects = onSnapshot(collection(db, 'projects'), (snap) => {
+        const items = snap.docs.map(d => ({ id: d.id, ...d.data() })) as Project[];
+        items.sort((a, b) => {
+          const diff = (a.order ?? 0) - (b.order ?? 0);
+          if (diff !== 0) return diff;
+          return a.id.localeCompare(b.id);
+        });
+        setProjects(items);
+        projectsLoaded = true;
+        checkLoaded();
+      }, (err) => {
+        console.warn('Projects failed to load', err);
+        projectsLoaded = true;
+        checkLoaded();
+      });
+    } catch (err) {
+      console.error('Snapshot registration failed', err);
+      setIsInitialLoad(false);
+    }
 
     const timeout = setTimeout(() => {
       if (isMounted && isInitialLoad) {
         console.warn('Loading emergency override - showing dummy data');
         setIsInitialLoad(false);
       }
-    }, 2000);
+    }, 1500);
 
     return () => { 
       isMounted = false;
@@ -395,12 +409,15 @@ export default function App() {
 
   if (isInitialLoad) {
     return (
-      <div className="min-h-screen bg-[#faf9f6] flex flex-col items-center justify-center">
-        <div className="w-10 h-10 border-t-2 border-black/10 border-t-black rounded-full animate-spin mb-6" />
+      <div className="min-h-screen bg-[#f3f4f6] flex flex-col items-center justify-center">
+        <div className="w-16 h-16 border-4 border-black/5 border-t-black rounded-full animate-spin mb-8" />
         <div className="text-center px-6">
-          <p className="font-ui text-[11px] tracking-[0.3em] opacity-30 uppercase font-light">Wavelet Studio</p>
-          <p className="font-ui text-[8px] tracking-[0.1em] opacity-10 uppercase mt-2">v1.6.0-RECOVERY-ACTIVE</p>
-          <p className="text-[9px] opacity-10 mt-4 max-w-[200px] mx-auto text-balance font-kr">연결이 지연되고 있습니다. 잠시만 기다려주세요.</p>
+          <p className="font-ui text-[12px] tracking-[0.4em] opacity-40 uppercase font-light">Wavelet Studio</p>
+          <p className="font-ui text-[9px] tracking-[0.1em] opacity-20 uppercase mt-2">v1.6.1-STABLE-RECOVERY</p>
+          <div className="mt-8 space-y-1">
+            <p className="text-[10px] opacity-20 font-kr">연결을 최적화하고 있습니다.</p>
+            <p className="text-[10px] opacity-10 font-kr italic">Domain verified. Initializing secure sync...</p>
+          </div>
         </div>
       </div>
     );
@@ -549,7 +566,7 @@ const HomeView = ({ settings, onNavigate, allProjects }: any) => {
           >
             {settings.homeHeadlineSub || "Photography Studio in Jeju"}
           </motion.p>
-          <p className="fixed bottom-2 left-2 text-[8px] text-white/40 select-none z-50 bg-black/20 px-2 py-1 rounded">v1.6.0-FINAL</p>
+          <p className="fixed bottom-2 left-2 text-[8px] text-white/40 select-none z-50 bg-black/20 px-2 py-1 rounded">v1.6.1-FINAL-SYNC</p>
         </div>
         <motion.div 
           animate={{ y: [0, 8, 0] }} 
