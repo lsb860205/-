@@ -1,5 +1,5 @@
 
-export const compressImage = (dataUrl: string, maxWidth = 1000, initialQuality = 0.5): Promise<string> => {
+export const compressImage = (dataUrl: string, maxWidth = 2000, quality = 0.85): Promise<string> => {
   return new Promise((resolve, reject) => {
     const img = new Image();
     img.src = dataUrl;
@@ -23,22 +23,7 @@ export const compressImage = (dataUrl: string, maxWidth = 1000, initialQuality =
       }
 
       ctx.drawImage(img, 0, 0, width, height);
-      
-      const MAX_SIZE = 1048576; // 1MB (1,048,576 characters/bytes in base64 string)
-      let quality = initialQuality;
-      let result = canvas.toDataURL('image/jpeg', quality);
-      
-      // Iteratively reduce quality if size is too large
-      // Starts at initialQuality, drops by 0.05 each step, min quality 0.5
-      while (result.length > MAX_SIZE && quality > 0.5) {
-        quality -= 0.05;
-        // Ensure quality doesn't go below 0.01 for toDataURL
-        const nextQuality = Math.max(0.01, quality);
-        result = canvas.toDataURL('image/jpeg', nextQuality);
-        if (nextQuality === 0.01) break;
-      }
-      
-      resolve(result);
+      resolve(canvas.toDataURL('image/jpeg', quality));
     };
     img.onerror = reject;
   });
