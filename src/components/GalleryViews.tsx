@@ -169,13 +169,13 @@ export const ProjectPage = ({ project, categoryProjects, onBack, onAdmin, onNavi
                   whileInView={{ opacity: 1, y: 0 }}
                   viewport={{ once: true, margin: "0px 0px -150px 0px" }}
                   transition={{ duration: 1, ease: "easeOut" }}
-                  className={`cursor-zoom-in group shadow-sm overflow-hidden flex items-center justify-center ${gridClasses}`}
+                  className={`cursor-zoom-in group flex items-center justify-center ${gridClasses}`}
                   onClick={() => setLightboxIndex(i)}
                 >
                   <img 
                     src={photo} 
                     alt={`${project.clientName} ${i + 1}`}
-                    className="max-w-full h-auto block opacity-95 group-hover:opacity-100 transition-opacity duration-1000"
+                    className="w-full h-auto block opacity-95 group-hover:opacity-100 transition-opacity duration-1000"
                   />
                 </motion.div>
               );

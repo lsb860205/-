@@ -4,7 +4,7 @@ import { Plus, Trash2, Save, RefreshCw, X, Image as ImageIcon, Upload, Loader2, 
 import { Project, GlobalSettings } from '../types';
 import { compressImage } from '../lib/imageUtils';
 import { getProjectSlug } from '../lib/slugUtils';
-import { auth, signInWithPopup, googleProvider } from '../firebase';
+import { auth, db, collection, getDocs, query, orderBy, signInWithPopup, googleProvider } from '../firebase';
 
 interface AdminDashboardProps {
   settings: GlobalSettings;
@@ -63,8 +63,8 @@ export const AdminDashboard = ({
 
   const processFile = async (file: File, isGallery = false): Promise<string> => {
     const dataUrl = await readFileAsDataURL(file);
-    // Main images and hero images compressed to 1600px, gallery to 1200px
-    return compressImage(dataUrl, isGallery ? 1200 : 1600, 0.7);
+    // Main/Hero images: 2400px, Gallery: 2000px. Initial quality: 0.88. Iterative reduction happens in compressImage.
+    return compressImage(dataUrl, isGallery ? 2000 : 2400, 0.88);
   };
 
   const handleMainImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -87,21 +87,22 @@ export const AdminDashboard = ({
     const files = Array.from(e.target.files || []) as File[];
     if (files.length === 0) return;
 
-    // Sort files by name to ensure consistent upload order
-    files.sort((a, b) => a.name.localeCompare(b.name, undefined, { numeric: true, sensitivity: 'base' }));
 
     setIsUploading(true);
     setUploadProgress({ current: 0, total: files.length });
     
     try {
-      const newUrls: string[] = [];
       // Process sequentially to ensure order and avoid memory spikes
       for (let i = 0; i < files.length; i++) {
         setUploadProgress({ current: i + 1, total: files.length });
         const url = await processFile(files[i], true);
-        newUrls.push(url);
+        if (url) {
+          setProjectForm(prev => ({ 
+            ...prev, 
+            photos: [...prev.photos, url] 
+          }));
+        }
       }
-      setProjectForm(prev => ({ ...prev, photos: [...prev.photos, ...newUrls] }));
     } catch (error) {
       console.error('Upload failed:', error);
       alert('파일을 읽는 데 실패했습니다.');
@@ -266,14 +267,27 @@ export const AdminDashboard = ({
     }
   };
 
-  const handleEditProject = (project: Project) => {
+  const handleEditProject = async (project: Project) => {
     setEditingId(project.id);
+    
+    // Fetch photos from subcollection since they aren't in the main project doc
+    let photos: string[] = [];
+    try {
+      const photosRef = collection(db, `projects/${project.id}/gallery`);
+      const q = query(photosRef, orderBy('order', 'asc'));
+      const snap = await getDocs(q);
+      photos = snap.docs.map(doc => doc.data().url);
+    } catch (err) {
+      console.error('Error fetching project photos:', err);
+      photos = project.photos || []; // Fallback
+    }
+
     setProjectForm({
       category: project.category,
       clientName: project.clientName,
       description: project.description || '',
       mainImage: project.mainImage,
-      photos: project.photos || []
+      photos
     });
     // Scroll to form
     window.scrollTo({ top: 0, behavior: 'smooth' });

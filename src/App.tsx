@@ -221,28 +221,17 @@ export default function App() {
         createdAt: new Date().toISOString() 
       });
 
-      // 2. Create photos in subcollection
+      // 2. Create photos in subcollection sequentially
       if (photos && photos.length > 0) {
-        const photoPromises = photos.map((url, i) => {
+        for (let i = 0; i < photos.length; i++) {
+          const url = photos[i];
           const photoId = i.toString().padStart(3, '0');
           const photoDocRef = doc(db, `projects/${id}/gallery`, photoId);
-          return setDoc(photoDocRef, { url, order: i });
-        });
-        await Promise.all(photoPromises);
+          await setDoc(photoDocRef, { url, order: i });
+        }
       }
 
-      // 3. Update local state immediately for better UX
-      const newProject: Project = {
-        id,
-        category: projectData.category!,
-        clientName: projectData.clientName!,
-        description: projectData.description,
-        mainImage: projectData.mainImage!,
-        photos: photos || [],
-        photoCount: photos?.length || 0,
-        order: projects.length
-      };
-      setProjects(prev => [...prev, newProject].sort((a, b) => (a.order ?? 0) - (b.order ?? 0)));
+      // 3. The data will be automatically added to local state via onSnapshot
       
       alert('프로젝트가 생성되었습니다.');
       return true;
@@ -280,15 +269,18 @@ export default function App() {
         const photosRef = collection(db, `projects/${id}/gallery`);
         const photosSnapshot = await getDocs(photosRef);
         
-        const deletePromises = photosSnapshot.docs.map(doc => deleteDoc(doc.ref));
-        await Promise.all(deletePromises);
+        // Delete existing photos sequentially
+        for (const photoDoc of photosSnapshot.docs) {
+          await deleteDoc(photoDoc.ref);
+        }
         
-        const photoPromises = photos.map((url, i) => {
+        // Add new photos sequentially to ensure order
+        for (let i = 0; i < photos.length; i++) {
+          const url = photos[i];
           const photoId = i.toString().padStart(3, '0');
           const photoDocRef = doc(db, `projects/${id}/gallery`, photoId);
-          return setDoc(photoDocRef, { url, order: i });
-        });
-        await Promise.all(photoPromises);
+          await setDoc(photoDocRef, { url, order: i });
+        }
       }
       
       alert('프로젝트가 수정되었습니다.');
