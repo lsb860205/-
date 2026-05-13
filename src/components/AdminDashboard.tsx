@@ -63,9 +63,9 @@ export const AdminDashboard = ({
 
   const processFile = async (file: File, isGallery = false): Promise<Blob> => {
     const dataUrl = await readFileAsDataURL(file);
-    // Main/Hero images: 2400px @ 0.88, Gallery: 2000px @ 0.85
-    const maxWidth = isGallery ? 2000 : 2400;
-    const quality = isGallery ? 0.85 : 0.88;
+    // Main/Hero images: 2400px @ 0.88, Gallery: 1400px @ 0.80
+    const maxWidth = isGallery ? 1400 : 2400;
+    const quality = isGallery ? 0.80 : 0.88;
     return compressImage(dataUrl, maxWidth, quality);
   };
 
@@ -102,18 +102,29 @@ export const AdminDashboard = ({
     setUploadProgress({ current: 0, total: files.length });
     
     try {
-      // Process sequentially to ensure order and avoid memory spikes
-      for (let i = 0; i < files.length; i++) {
-        setUploadProgress({ current: i + 1, total: files.length });
-        const compressed = await processFile(files[i], true);
-        if (compressed) {
-          const filename = `gallery_${Date.now()}_${i}_${files[i].name}`;
-          const url = await uploadToStorage(compressed, `uploads/${filename}`);
-          setProjectForm(prev => ({ 
-            ...prev, 
-            photos: [...prev.photos, url] 
-          }));
-        }
+      // Process in batches of 2 to speed up while maintaining order and avoiding memory spikes
+      for (let i = 0; i < files.length; i += 2) {
+        const batch = files.slice(i, i + 2);
+        
+        const batchResults = await Promise.all(batch.map(async (file, idx) => {
+          const globalIdx = i + idx;
+          const compressed = await processFile(file, true);
+          if (compressed) {
+            const filename = `gallery_${Date.now()}_${globalIdx}_${file.name}`;
+            const url = await uploadToStorage(compressed, `uploads/${filename}`);
+            return url;
+          }
+          return null;
+        }));
+
+        const validUrls = batchResults.filter((url): url is string => url !== null);
+        
+        setProjectForm(prev => ({ 
+          ...prev, 
+          photos: [...prev.photos, ...validUrls] 
+        }));
+        
+        setUploadProgress({ current: Math.min(i + 2, files.length), total: files.length });
       }
     } catch (error) {
       console.error('Upload failed:', error);
