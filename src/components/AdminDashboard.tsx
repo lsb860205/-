@@ -4,7 +4,7 @@ import { Plus, Trash2, Save, RefreshCw, X, Image as ImageIcon, Upload, Loader2, 
 import { Project, GlobalSettings } from '../types';
 import { compressImage } from '../lib/imageUtils';
 import { getProjectSlug } from '../lib/slugUtils';
-import { auth, db, collection, getDocs, query, orderBy, signInWithPopup, googleProvider, storage, ref, uploadString, getDownloadURL } from '../firebase';
+import { auth, db, collection, getDocs, query, orderBy, signInWithPopup, googleProvider, storage, ref, uploadBytes, getDownloadURL } from '../firebase';
 
 interface AdminDashboardProps {
   settings: GlobalSettings;
@@ -61,7 +61,7 @@ export const AdminDashboard = ({
     });
   };
 
-  const processFile = async (file: File, isGallery = false): Promise<string> => {
+  const processFile = async (file: File, isGallery = false): Promise<Blob> => {
     const dataUrl = await readFileAsDataURL(file);
     // Main/Hero images: 2400px @ 0.88, Gallery: 2000px @ 0.85
     const maxWidth = isGallery ? 2000 : 2400;
@@ -69,9 +69,9 @@ export const AdminDashboard = ({
     return compressImage(dataUrl, maxWidth, quality);
   };
 
-  const uploadToStorage = async (dataUrl: string, path: string): Promise<string> => {
+  const uploadToStorage = async (blob: Blob, path: string): Promise<string> => {
     const storageRef = ref(storage, path);
-    await uploadString(storageRef, dataUrl, 'data_url');
+    await uploadBytes(storageRef, blob, { contentType: 'image/jpeg' });
     return getDownloadURL(storageRef);
   };
 

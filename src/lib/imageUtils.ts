@@ -1,5 +1,5 @@
 
-export const compressImage = (dataUrl: string, maxWidth = 2000, quality = 0.85): Promise<string> => {
+export const compressImage = (dataUrl: string, maxWidth = 2000, quality = 0.85): Promise<Blob> => {
   return new Promise((resolve, reject) => {
     const img = new Image();
     img.src = dataUrl;
@@ -23,7 +23,13 @@ export const compressImage = (dataUrl: string, maxWidth = 2000, quality = 0.85):
       }
 
       ctx.drawImage(img, 0, 0, width, height);
-      resolve(canvas.toDataURL('image/jpeg', quality));
+      canvas.toBlob((blob) => {
+        if (blob) {
+          resolve(blob);
+        } else {
+          reject(new Error('Canvas to blob conversion failed'));
+        }
+      }, 'image/jpeg', quality);
     };
     img.onerror = reject;
   });
