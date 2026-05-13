@@ -63,8 +63,10 @@ export const AdminDashboard = ({
 
   const processFile = async (file: File, isGallery = false): Promise<string> => {
     const dataUrl = await readFileAsDataURL(file);
-    // Main/Hero images: 2400px, Gallery: 2000px. Initial quality: 0.88. Iterative reduction happens in compressImage.
-    return compressImage(dataUrl, isGallery ? 2000 : 2400, 0.88);
+    // Main/Hero images: 2400px @ 0.88, Gallery: 2000px @ 0.85
+    const maxWidth = isGallery ? 2000 : 2400;
+    const quality = isGallery ? 0.85 : 0.88;
+    return compressImage(dataUrl, maxWidth, quality);
   };
 
   const uploadToStorage = async (dataUrl: string, path: string): Promise<string> => {
@@ -128,9 +130,11 @@ export const AdminDashboard = ({
     if (files.length === 0) return;
 
     setIsUploading(true);
+    setUploadProgress({ current: 0, total: files.length });
     try {
       const urls: string[] = [];
       for (let i = 0; i < files.length; i++) {
+        setUploadProgress({ current: i + 1, total: files.length });
         const compressed = await processFile(files[i]);
         const filename = `hero_${Date.now()}_${i}_${files[i].name}`;
         const url = await uploadToStorage(compressed, `settings/${filename}`);
@@ -142,6 +146,7 @@ export const AdminDashboard = ({
       alert('히어로 이미지 업로드에 실패했습니다.');
     } finally {
       setIsUploading(false);
+      setUploadProgress({ current: 0, total: 0 });
       if (heroImagesInputRef.current) heroImagesInputRef.current.value = '';
     }
   };
@@ -442,14 +447,21 @@ export const AdminDashboard = ({
           <div className="flex flex-col gap-4">
             <div className="flex justify-between items-end">
               <label className="font-ui text-[10px] tracking-widest text-gray-400 uppercase">홈 슬라이더 이미지 ({localSettings.heroImages?.length || 0}개)</label>
-              <button 
-                disabled={isUploading}
-                onClick={() => heroImagesInputRef.current?.click()}
-                className="font-ui text-[10px] tracking-widest text-accent flex items-center gap-2 hover:opacity-70 transition-opacity disabled:opacity-30"
-              >
-                {isUploading ? <Loader2 className="animate-spin" size={14} /> : <Plus size={14} />} 
-                이미지 추가
-              </button>
+              <div className="flex items-center gap-4">
+                {isUploading && uploadProgress.total > 0 && activeTab === 'home' && (
+                  <span className="font-ui text-[9px] text-accent animate-pulse">
+                    업로드 중... ({uploadProgress.current}/{uploadProgress.total})
+                  </span>
+                )}
+                <button 
+                  disabled={isUploading}
+                  onClick={() => heroImagesInputRef.current?.click()}
+                  className="font-ui text-[10px] tracking-widest text-accent flex items-center gap-2 hover:opacity-70 transition-opacity disabled:opacity-30"
+                >
+                  {isUploading ? <Loader2 className="animate-spin" size={14} /> : <Plus size={14} />} 
+                  이미지 추가
+                </button>
+              </div>
               <input 
                 ref={heroImagesInputRef}
                 type="file" 
