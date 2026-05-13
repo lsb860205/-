@@ -27,7 +27,7 @@ export const CategoryPage = ({ type, projects, meta, onNavigate, onAdmin }: Cate
         >
           <h2 className="font-ui text-[28px] md:text-[40px] font-light text-text-main mb-6 uppercase tracking-tight">{meta?.title}</h2>
           <div className="w-12 h-[1px] bg-accent mb-6" />
-          <p className="font-kr font-light text-[13px] md:text-[14px] tracking-[0.05em] leading-[2] text-text-sub">
+          <p className="font-kr font-light text-[13px] md:text-[14px] tracking-[0.05em] leading-[2] text-text-sub whitespace-pre-line">
             {meta?.description}
           </p>
         </motion.div>
