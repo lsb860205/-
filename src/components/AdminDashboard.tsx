@@ -4,7 +4,7 @@ import { Plus, Trash2, Save, RefreshCw, X, Image as ImageIcon, Upload, Loader2, 
 import { Project, GlobalSettings } from '../types';
 import { compressImage } from '../lib/imageUtils';
 import { getProjectSlug } from '../lib/slugUtils';
-import { auth, db, collection, getDocs, query, orderBy, signInWithPopup, googleProvider } from '../firebase';
+import { auth, db, collection, getDocs, query, orderBy, signInWithPopup, googleProvider, storage, ref, uploadString, getDownloadURL } from '../firebase';
 
 interface AdminDashboardProps {
   settings: GlobalSettings;
@@ -67,6 +67,12 @@ export const AdminDashboard = ({
     return compressImage(dataUrl, isGallery ? 2000 : 2400, 0.88);
   };
 
+  const uploadToStorage = async (dataUrl: string, path: string): Promise<string> => {
+    const storageRef = ref(storage, path);
+    await uploadString(storageRef, dataUrl, 'data_url');
+    return getDownloadURL(storageRef);
+  };
+
   const handleMainImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
@@ -74,10 +80,12 @@ export const AdminDashboard = ({
     setIsUploading(true);
     try {
       const compressed = await processFile(file);
-      setProjectForm(prev => ({ ...prev, mainImage: compressed }));
+      const filename = `main_${Date.now()}_${file.name}`;
+      const url = await uploadToStorage(compressed, `uploads/${filename}`);
+      setProjectForm(prev => ({ ...prev, mainImage: url }));
     } catch (error) {
       console.error('Upload failed:', error);
-      alert('파일을 읽는 데 실패했습니다.');
+      alert('이미지 업로드에 실패했습니다.');
     } finally {
       setIsUploading(false);
     }
@@ -95,8 +103,10 @@ export const AdminDashboard = ({
       // Process sequentially to ensure order and avoid memory spikes
       for (let i = 0; i < files.length; i++) {
         setUploadProgress({ current: i + 1, total: files.length });
-        const url = await processFile(files[i], true);
-        if (url) {
+        const compressed = await processFile(files[i], true);
+        if (compressed) {
+          const filename = `gallery_${Date.now()}_${i}_${files[i].name}`;
+          const url = await uploadToStorage(compressed, `uploads/${filename}`);
           setProjectForm(prev => ({ 
             ...prev, 
             photos: [...prev.photos, url] 
@@ -105,7 +115,7 @@ export const AdminDashboard = ({
       }
     } catch (error) {
       console.error('Upload failed:', error);
-      alert('파일을 읽는 데 실패했습니다.');
+      alert('갤러리 이미지 업로드에 실패했습니다.');
     } finally {
       setIsUploading(false);
       setUploadProgress({ current: 0, total: 0 });
@@ -119,11 +129,17 @@ export const AdminDashboard = ({
 
     setIsUploading(true);
     try {
-      const compressedUrls = await Promise.all(files.map(file => processFile(file)));
-      setLocalSettings(prev => ({ ...prev, heroImages: [...prev.heroImages, ...compressedUrls] }));
+      const urls: string[] = [];
+      for (let i = 0; i < files.length; i++) {
+        const compressed = await processFile(files[i]);
+        const filename = `hero_${Date.now()}_${i}_${files[i].name}`;
+        const url = await uploadToStorage(compressed, `settings/${filename}`);
+        urls.push(url);
+      }
+      setLocalSettings(prev => ({ ...prev, heroImages: [...prev.heroImages, ...urls] }));
     } catch (error) {
       console.error('Upload failed:', error);
-      alert('파일을 읽는 데 실패했습니다.');
+      alert('히어로 이미지 업로드에 실패했습니다.');
     } finally {
       setIsUploading(false);
       if (heroImagesInputRef.current) heroImagesInputRef.current.value = '';
@@ -137,10 +153,12 @@ export const AdminDashboard = ({
     setIsUploading(true);
     try {
       const compressed = await processFile(file);
-      setLocalSettings(prev => ({ ...prev, aboutImage: compressed }));
+      const filename = `about_${Date.now()}_${file.name}`;
+      const url = await uploadToStorage(compressed, `settings/${filename}`);
+      setLocalSettings(prev => ({ ...prev, aboutImage: url }));
     } catch (error) {
       console.error('Upload failed:', error);
-      alert('파일을 읽는 데 실패했습니다.');
+      alert('어바웃 이미지 업로드에 실패했습니다.');
     } finally {
       setIsUploading(false);
     }
