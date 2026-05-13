@@ -4,7 +4,7 @@ import { ArrowDown, LogIn } from 'lucide-react';
 import { 
   db, auth, googleProvider,
   collection, doc, getDoc, setDoc, deleteDoc, 
-  query, orderBy, onSnapshot, getDocs, writeBatch,
+  query, orderBy, getDocs, writeBatch,
   signInWithPopup, signOut,
   handleFirestoreError, OperationType
 } from './firebase';
@@ -86,52 +86,74 @@ export default function App() {
   const [isInitialLoad, setIsInitialLoad] = useState(true);
   const [user, setUser] = useState(auth?.currentUser);
 
+  const fetchData = useCallback(async (forceRefresh = false) => {
+    const CACHE_DURATION = 5 * 60 * 1000; // 5 minutes
+    const now = Date.now();
+    
+    // 1. Try to load from session storage first
+    const cachedSettings = sessionStorage.getItem('studio_settings');
+    const cachedProjects = sessionStorage.getItem('studio_projects');
+    const lastFetch = sessionStorage.getItem('studio_last_fetch');
+
+    if (cachedSettings) setSettings(JSON.parse(cachedSettings));
+    if (cachedProjects) setProjects(JSON.parse(cachedProjects));
+
+    // Determine if we need to fetch from server
+    const isCacheStale = !lastFetch || (now - parseInt(lastFetch)) > CACHE_DURATION;
+    
+    // If we have data and it's not stale/forced, we are done
+    if (cachedSettings && cachedProjects && !isCacheStale && !forceRefresh) {
+      setIsInitialLoad(false);
+      return;
+    }
+
+    if (cachedSettings && cachedProjects) {
+      setIsInitialLoad(false);
+    }
+
+    try {
+      // 2. Background fetch from Firebase
+      const [settingsSnap, projectsSnap] = await Promise.all([
+        getDoc(doc(db, 'settings', 'main')),
+        getDocs(collection(db, 'projects'))
+      ]);
+
+      let newSettings = DEFAULT_SETTINGS;
+      if (settingsSnap.exists()) {
+        newSettings = settingsSnap.data() as GlobalSettings;
+      }
+      
+      const newProjects = projectsSnap.docs.map(d => ({ id: d.id, ...d.data() })) as Project[];
+      newProjects.sort((a, b) => {
+        const diff = (a.order ?? 0) - (b.order ?? 0);
+        if (diff !== 0) return diff;
+        return a.id.localeCompare(b.id);
+      });
+
+      // Update state
+      setSettings(newSettings);
+      setProjects(newProjects);
+
+      // Store in session storage with timestamp
+      sessionStorage.setItem('studio_settings', JSON.stringify(newSettings));
+      sessionStorage.setItem('studio_projects', JSON.stringify(newProjects));
+      sessionStorage.setItem('studio_last_fetch', now.toString());
+    } catch (err) {
+      console.warn('Data fetch error (likely quota):', err);
+      // Keep existing cache if available
+    } finally {
+      setIsInitialLoad(false);
+    }
+  }, []);
+
   useEffect(() => {
     if (!auth) return;
     return auth.onAuthStateChanged(u => setUser(u));
   }, []);
 
   useEffect(() => {
-    let settingsLoaded = false;
-    let projectsLoaded = false;
-
-    const checkLoaded = () => {
-      if (settingsLoaded && projectsLoaded) {
-        setIsInitialLoad(false);
-      }
-    };
-
-    const unsubSettings = onSnapshot(doc(db, 'settings', 'main'), (snap) => {
-      if (snap.exists()) setSettings(snap.data() as GlobalSettings);
-      settingsLoaded = true;
-      checkLoaded();
-    }, (err) => {
-      console.warn('Settings snapshot error:', err);
-      setIsInitialLoad(false);
-      settingsLoaded = true;
-      checkLoaded();
-    });
-
-    const unsubProjects = onSnapshot(collection(db, 'projects'), (snap) => {
-      const items = snap.docs.map(d => ({ id: d.id, ...d.data() })) as Project[];
-      // Stable sort by order then ID
-      items.sort((a, b) => {
-        const diff = (a.order ?? 0) - (b.order ?? 0);
-        if (diff !== 0) return diff;
-        return a.id.localeCompare(b.id);
-      });
-      setProjects(items);
-      projectsLoaded = true;
-      checkLoaded();
-    }, (err) => {
-      console.warn('Projects snapshot error:', err);
-      setIsInitialLoad(false);
-      projectsLoaded = true;
-      checkLoaded();
-    });
-
-    return () => { unsubSettings(); unsubProjects(); };
-  }, []);
+    fetchData();
+  }, [fetchData]);
 
   const displayProjects = useMemo(() => {
     const projectList = projects.length > 0 ? projects : DUMMY_PROJECTS;
@@ -189,6 +211,7 @@ export default function App() {
     }
     try {
       await setDoc(doc(db, 'settings', 'main'), { ...s, updatedAt: new Date().toISOString() });
+      await fetchData(true); // Refetch after update
       alert('설정이 저장되었습니다.');
     } catch (err: any) {
       handleFirestoreError(err, OperationType.WRITE, 'settings/main');
@@ -231,7 +254,8 @@ export default function App() {
         }
       }
 
-      // 3. The data will be automatically added to local state via onSnapshot
+      // 3. Refetch to update local state
+      await fetchData(true);
       
       alert('프로젝트가 생성되었습니다.');
       return true;
@@ -283,6 +307,8 @@ export default function App() {
         }
       }
       
+      await fetchData(true); // Refetch
+      
       alert('프로젝트가 수정되었습니다.');
       return true;
     } catch (err: any) {
@@ -305,6 +331,8 @@ export default function App() {
         updatedAt: new Date().toISOString() 
       }, { merge: true });
       
+      await fetchData(true); // Refetch
+      
       alert('휴지통으로 이동되었습니다.');
     } catch (err: any) {
       handleFirestoreError(err, OperationType.WRITE, `projects/${id}`);
@@ -321,6 +349,8 @@ export default function App() {
         isDeleted: false,
         updatedAt: new Date().toISOString() 
       }, { merge: true });
+      
+      await fetchData(true); // Refetch
       
       alert('복원되었습니다.');
     } catch (err: any) {
@@ -346,6 +376,8 @@ export default function App() {
       // 2. Delete main doc
       await deleteDoc(doc(db, 'projects', id));
       
+      await fetchData(true); // Refetch
+      
       alert('완전 삭제되었습니다.');
     } catch (err: any) {
       handleFirestoreError(err, OperationType.DELETE, `projects/${id}`);
@@ -364,6 +396,7 @@ export default function App() {
         }
       });
       await batch.commit();
+      await fetchData(true); // Refetch
     } catch (err) {
       handleFirestoreError(err, OperationType.WRITE, 'projects/reorder');
       alert('순서 저장 중 오류가 발생했습니다.');
@@ -407,6 +440,7 @@ export default function App() {
             await batch.commit();
           }
         }
+        await fetchData(true); // Refetch
         alert('데이터 초기화가 완료되었습니다.');
       } catch (err) {
         handleFirestoreError(err, OperationType.WRITE, 'projects');

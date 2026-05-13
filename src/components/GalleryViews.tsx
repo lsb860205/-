@@ -84,21 +84,39 @@ export const ProjectPage = ({ project, categoryProjects, onBack, onAdmin, onNavi
 
   useEffect(() => {
     const fetchPhotos = async () => {
-      setLoading(true);
+      const CACHE_DURATION = 5 * 60 * 1000; // 5 minutes
+      const now = Date.now();
+      const cacheKey = `gallery_${project.id}`;
+      const lastFetchKey = `${cacheKey}_last_fetch`;
+      
+      // 1. Try cache first
+      const cached = sessionStorage.getItem(cacheKey);
+      const lastFetch = sessionStorage.getItem(lastFetchKey);
+      
+      if (cached) {
+        setPhotos(JSON.parse(cached));
+        setLoading(false);
+      }
+
+      const isCacheStale = !lastFetch || (now - parseInt(lastFetch)) > CACHE_DURATION;
+      if (cached && !isCacheStale) return;
+
       try {
         const photosRef = collection(db, `projects/${project.id}/gallery`);
         const q = query(photosRef, orderBy('order', 'asc'));
         const snapshot = await getDocs(q);
         const fetchedPhotos = snapshot.docs.map(doc => doc.data().url as string);
         
-        if (fetchedPhotos.length > 0) {
-          setPhotos(fetchedPhotos);
-        } else {
-          // Fallback to project.photos if any (for migration/dummy)
-          setPhotos(project.photos || []);
+        let finalPhotos = fetchedPhotos;
+        if (fetchedPhotos.length === 0) {
+          finalPhotos = project.photos || [];
         }
+
+        setPhotos(finalPhotos);
+        sessionStorage.setItem(cacheKey, JSON.stringify(finalPhotos));
+        sessionStorage.setItem(lastFetchKey, now.toString());
       } catch (err) {
-        handleFirestoreError(err, OperationType.GET, `projects/${project.id}/gallery`);
+        console.warn('Gallery photos fetch error (likely quota):', err);
       } finally {
         setLoading(false);
       }
