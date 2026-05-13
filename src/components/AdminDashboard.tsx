@@ -13,6 +13,8 @@ interface AdminDashboardProps {
   onAddProject: (item: Partial<Project>) => Promise<boolean>;
   onUpdateProject: (id: string, item: Partial<Project>) => Promise<boolean>;
   onDeleteProject: (id: string) => Promise<void>;
+  onRestoreProject: (id: string) => Promise<void>;
+  onPermanentlyDeleteProject: (id: string) => Promise<void>;
   onReorderProjects: (items: Project[]) => Promise<void>;
   onSeedData: () => void;
   onLogout: () => void;
@@ -25,6 +27,8 @@ export const AdminDashboard = ({
   onAddProject, 
   onUpdateProject,
   onDeleteProject,
+  onRestoreProject,
+  onPermanentlyDeleteProject,
   onReorderProjects,
   onSeedData,
   onLogout
@@ -82,6 +86,9 @@ export const AdminDashboard = ({
   const handleGalleryUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = Array.from(e.target.files || []) as File[];
     if (files.length === 0) return;
+
+    // Sort files by name to ensure consistent upload order
+    files.sort((a, b) => a.name.localeCompare(b.name, undefined, { numeric: true, sensitivity: 'base' }));
 
     setIsUploading(true);
     setUploadProgress({ current: 0, total: files.length });
@@ -774,7 +781,7 @@ export const AdminDashboard = ({
             
             {categories.map(cat => {
               const catProjects = projects
-                .filter(p => p.category === cat)
+                .filter(p => p.category === cat && !p.isDeleted)
                 .sort((a, b) => {
                   const diff = (a.order ?? 0) - (b.order ?? 0);
                   if (diff !== 0) return diff;
@@ -881,6 +888,52 @@ export const AdminDashboard = ({
                 </div>
               );
             })}
+
+            {/* Trash Section */}
+            {projects.some(p => p.isDeleted) && (
+              <div className="mt-32 pt-20 border-t-4 border-double border-border/30">
+                <div className="flex items-center gap-4 mb-12">
+                  <h3 className="font-ui text-xl tracking-tighter uppercase font-bold text-red-800/60">
+                    삭제된 프로젝트 (휴지통)
+                  </h3>
+                  <span className="font-ui text-[10px] bg-red-50 px-2 py-0.5 text-red-400 rounded-full">
+                    {projects.filter(p => p.isDeleted).length} items
+                  </span>
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6 opacity-60 grayscale hover:grayscale-0 hover:opacity-100 transition-all duration-500">
+                  {projects
+                    .filter(p => p.isDeleted)
+                    .sort((a, b) => b.id.localeCompare(a.id))
+                    .map(project => (
+                      <div key={project.id} className="relative flex flex-col bg-bg-white border border-border/50 group">
+                        <div className="aspect-[4/5] bg-bg-warm overflow-hidden relative">
+                          <img src={project.mainImage} className="w-full h-full object-cover" />
+                          <div className="absolute inset-0 bg-black/60 flex flex-col items-center justify-center p-4 gap-3 opacity-0 group-hover:opacity-100 transition-opacity">
+                            <button 
+                              onClick={() => onRestoreProject(project.id)}
+                              className="w-full bg-white text-black py-2 rounded-sm font-ui text-[10px] tracking-widest uppercase hover:bg-gray-100 transition-colors flex items-center justify-center gap-2"
+                            >
+                              <RefreshCw size={12} /> RESTORE
+                            </button>
+                            <button 
+                              onClick={() => onPermanentlyDeleteProject(project.id)}
+                              className="w-full bg-red-600 text-white py-2 rounded-sm font-ui text-[10px] tracking-widest uppercase hover:bg-red-700 transition-colors flex items-center justify-center gap-2"
+                            >
+                              <Trash2 size={12} /> DELETE PERMANENTLY
+                            </button>
+                          </div>
+                        </div>
+                        <div className="p-4">
+                          <h4 className="font-ui text-[13px] tracking-tight text-text-main font-medium truncate uppercase">{project.clientName}</h4>
+                          <span className="font-ui text-[9px] text-red-400 tracking-widest">{project.category.toUpperCase()}</span>
+                        </div>
+                      </div>
+                    ))
+                  }
+                </div>
+              </div>
+            )}
           </div>
         </motion.div>
       )}

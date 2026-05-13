@@ -133,7 +133,10 @@ export default function App() {
     return () => { unsubSettings(); unsubProjects(); };
   }, []);
 
-  const displayProjects = useMemo(() => projects.length > 0 ? projects : DUMMY_PROJECTS, [projects]);
+  const displayProjects = useMemo(() => {
+    const projectList = projects.length > 0 ? projects : DUMMY_PROJECTS;
+    return projectList.filter(p => !p.isDeleted);
+  }, [projects]);
 
   useEffect(() => {
     const handleHash = () => {
@@ -214,6 +217,7 @@ export default function App() {
         ...projectData, 
         photoCount: photos?.length || 0,
         order: projects.length, 
+        isDeleted: false,
         createdAt: new Date().toISOString() 
       });
 
@@ -296,12 +300,48 @@ export default function App() {
     }
   };
 
-  const deleteProject = async (id: string) => {
+  const softDeleteProject = async (id: string) => {
     if (!db || !auth) return;
     if (!auth?.currentUser) {
       alert('관리자 인증이 필요합니다. 상단의 인증하기 버튼을 눌러주세요.');
       return;
     }
+    
+    try {
+      await setDoc(doc(db, 'projects', id), { 
+        isDeleted: true,
+        updatedAt: new Date().toISOString() 
+      }, { merge: true });
+      
+      alert('휴지통으로 이동되었습니다.');
+    } catch (err: any) {
+      handleFirestoreError(err, OperationType.WRITE, `projects/${id}`);
+      alert('오류: ' + (err.message || err));
+    }
+  };
+
+  const restoreProject = async (id: string) => {
+    if (!db || !auth) return;
+    if (!auth?.currentUser) return;
+    
+    try {
+      await setDoc(doc(db, 'projects', id), { 
+        isDeleted: false,
+        updatedAt: new Date().toISOString() 
+      }, { merge: true });
+      
+      alert('복원되었습니다.');
+    } catch (err: any) {
+      handleFirestoreError(err, OperationType.WRITE, `projects/${id}`);
+      alert('오류: ' + (err.message || err));
+    }
+  };
+
+  const permanentlyDeleteProject = async (id: string) => {
+    if (!db || !auth) return;
+    if (!auth?.currentUser) return;
+    
+    if (!confirm('영구 삭제하시겠습니까? 이 작업은 되돌릴 수 없습니다.')) return;
     
     try {
       // 1. Delete subcollection photos first
@@ -314,7 +354,7 @@ export default function App() {
       // 2. Delete main doc
       await deleteDoc(doc(db, 'projects', id));
       
-      alert('삭제되었습니다.');
+      alert('완전 삭제되었습니다.');
     } catch (err: any) {
       handleFirestoreError(err, OperationType.DELETE, `projects/${id}`);
       alert('오류: ' + (err.message || err));
@@ -478,7 +518,9 @@ export default function App() {
                 onSaveSettings={saveSettings}
                 onAddProject={addProject}
                 onUpdateProject={updateProject}
-                onDeleteProject={deleteProject}
+                onDeleteProject={softDeleteProject}
+                onRestoreProject={restoreProject}
+                onPermanentlyDeleteProject={permanentlyDeleteProject}
                 onReorderProjects={reorderProjects}
                 onSeedData={seedData}
                 onLogout={() => { setIsAdminLoggedIn(false); setPassword(''); navigateTo('home'); }}

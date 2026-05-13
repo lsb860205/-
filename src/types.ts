@@ -9,6 +9,7 @@ export interface Project {
   photos?: string[];
   photoCount?: number;
   order: number;
+  isDeleted?: boolean;
 }
 
 export interface GlobalSettings {
