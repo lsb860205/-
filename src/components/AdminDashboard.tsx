@@ -1,13 +1,10 @@
-// Version 1.5 - Forced Sync Update
 import React, { useState, useRef } from 'react';
 import { motion } from 'motion/react';
 import { Plus, Trash2, Save, RefreshCw, X, Image as ImageIcon, Upload, Loader2, ChevronLeft, ChevronRight, ChevronUp, ChevronDown, ExternalLink } from 'lucide-react';
 import { Project, GlobalSettings } from '../types';
-import { CATEGORY_META } from '../constants';
 import { compressImage } from '../lib/imageUtils';
 import { getProjectSlug } from '../lib/slugUtils';
-import { auth, signInWithPopup, googleProvider, db } from '../firebase';
-import { collection, query, orderBy, getDocs } from 'firebase/firestore';
+import { auth, signInWithPopup, googleProvider } from '../firebase';
 
 interface AdminDashboardProps {
   settings: GlobalSettings;
@@ -33,36 +30,7 @@ export const AdminDashboard = ({
   onLogout
 }: AdminDashboardProps) => {
   const [localSettings, setLocalSettings] = useState(settings);
-  const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
-  const [isSavingSettings, setIsSavingSettings] = useState(false);
-
-  // Sync only on initial load or if explicitly requested (to avoid flickers while typing)
-  React.useEffect(() => {
-    if (!hasUnsavedChanges && !isSavingSettings) {
-      setLocalSettings(settings);
-    }
-  }, [settings, hasUnsavedChanges, isSavingSettings]);
-
-  const updateLocalSettings = (updater: (s: GlobalSettings) => GlobalSettings) => {
-    setLocalSettings(updater);
-    setHasUnsavedChanges(true);
-  };
-
-  const handleSaveSettings = async () => {
-    if (isSavingSettings) return;
-    setIsSavingSettings(true);
-    try {
-      await onSaveSettings(localSettings);
-      setHasUnsavedChanges(false);
-      // Give some time for Firestore onSnapshot to propagate before enabling sync back
-      setTimeout(() => setIsSavingSettings(false), 2000);
-    } catch (err) {
-      console.error('Save failed:', err);
-      setIsSavingSettings(false);
-    }
-  };
-
-  const [activeTab, setActiveTab] = useState<'home' | 'about' | 'categories' | 'projects'>('home');
+  const [activeTab, setActiveTab] = useState<'home' | 'about' | 'projects' | 'category'>('home');
   const [isUploading, setIsUploading] = useState(false);
   const [uploadProgress, setUploadProgress] = useState({ current: 0, total: 0 });
   
@@ -144,7 +112,7 @@ export const AdminDashboard = ({
     setIsUploading(true);
     try {
       const compressedUrls = await Promise.all(files.map(file => processFile(file)));
-      updateLocalSettings(prev => ({ ...prev, heroImages: [...prev.heroImages, ...compressedUrls] }));
+      setLocalSettings(prev => ({ ...prev, heroImages: [...prev.heroImages, ...compressedUrls] }));
     } catch (error) {
       console.error('Upload failed:', error);
       alert('파일을 읽는 데 실패했습니다.');
@@ -161,7 +129,7 @@ export const AdminDashboard = ({
     setIsUploading(true);
     try {
       const compressed = await processFile(file);
-      updateLocalSettings(prev => ({ ...prev, aboutImage: compressed }));
+      setLocalSettings(prev => ({ ...prev, aboutImage: compressed }));
     } catch (error) {
       console.error('Upload failed:', error);
       alert('파일을 읽는 데 실패했습니다.');
@@ -187,6 +155,19 @@ export const AdminDashboard = ({
     });
   };
 
+  const moveHero = (index: number, direction: 'left' | 'right') => {
+    setLocalSettings(prev => {
+      const newHeroes = prev.heroImages ? [...prev.heroImages] : [];
+      const targetIndex = direction === 'left' ? index - 1 : index + 1;
+      if (targetIndex < 0 || targetIndex >= newHeroes.length) return prev;
+      
+      const temp = newHeroes[index];
+      newHeroes[index] = newHeroes[targetIndex];
+      newHeroes[targetIndex] = temp;
+      return { ...prev, heroImages: newHeroes };
+    });
+  };
+
   const [deleteConfirmId, setDeleteConfirmId] = useState<string | null>(null);
   const [isReordering, setIsReordering] = useState(false);
   const [authError, setAuthError] = useState<string | null>(null);
@@ -195,7 +176,7 @@ export const AdminDashboard = ({
 
   const moveProject = async (e: React.MouseEvent, category: string, index: number, direction: 'up' | 'down') => {
     e.stopPropagation();
-    if (!auth?.currentUser) {
+    if (!auth.currentUser) {
       alert('관리자 인증이 필요합니다.');
       return;
     }
@@ -251,12 +232,10 @@ export const AdminDashboard = ({
   };
 
   const handleLogin = async () => {
-    if (!auth) return;
     setAuthError(null);
     try {
       await signInWithPopup(auth, googleProvider);
-    } catch (err: any) {
-      if (err.code === 'auth/popup-closed-by-user') return;
+    } catch (err) {
       console.error('Login error:', err);
       setAuthError(err instanceof Error ? err.message : '인증 실패');
     }
@@ -264,7 +243,7 @@ export const AdminDashboard = ({
 
   const handleDeleteClick = (e: React.MouseEvent, project: Project) => {
     e.stopPropagation();
-    if (!auth?.currentUser) {
+    if (!auth.currentUser) {
       alert('관리자 인증이 필요합니다.');
       return;
     }
@@ -280,10 +259,8 @@ export const AdminDashboard = ({
     }
   };
 
-  const handleEditProject = async (project: Project) => {
+  const handleEditProject = (project: Project) => {
     setEditingId(project.id);
-    
-    // Initial partial form
     setProjectForm({
       category: project.category,
       clientName: project.clientName,
@@ -291,25 +268,6 @@ export const AdminDashboard = ({
       mainImage: project.mainImage,
       photos: project.photos || []
     });
-
-    // Fetch full gallery if it's from Firebase
-    if (project.id && !project.id.startsWith('dummy-')) {
-      setIsUploading(true);
-      try {
-        const photosRef = collection(db, `projects/${project.id}/gallery`);
-        const q = query(photosRef, orderBy('order', 'asc'));
-        const snapshot = await getDocs(q);
-        const fetchedPhotos = snapshot.docs.map(doc => doc.data().url as string);
-        if (fetchedPhotos.length > 0) {
-          setProjectForm(prev => ({ ...prev, photos: fetchedPhotos }));
-        }
-      } catch (err) {
-        console.error('Failed to fetch gallery for edit:', err);
-      } finally {
-        setIsUploading(false);
-      }
-    }
-
     // Scroll to form
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
@@ -331,138 +289,115 @@ export const AdminDashboard = ({
         <div className="flex flex-col gap-2">
           <h1 className="font-ui text-xl md:text-3xl tracking-tighter font-light flex items-center gap-3">
             관리자 대시보드
-            <span className="text-[10px] font-mono text-gray-400 font-normal opacity-40 ml-2">1.8.0</span>
+            <span className="text-[10px] font-mono text-gray-300 font-normal opacity-50">v1.2</span>
           </h1>
-            <div className="flex flex-col gap-1">
-            <div className="flex items-center gap-2">
-              <div className={`w-2 h-2 rounded-full shadow-sm ${auth?.currentUser ? 'bg-green-500 animate-pulse' : 'bg-red-500'}`} />
-              <span className="font-ui text-[10px] tracking-widest text-text-sub uppercase font-bold">
-                {auth?.currentUser ? `연결됨: ${auth.currentUser.email}` : '관리자 인증이 필요합니다'}
-              </span>
-              {!auth?.currentUser && (
-                <button 
-                  onClick={handleLogin}
-                  className="font-ui text-[11px] tracking-widest bg-black text-white px-4 py-1.5 rounded-sm hover:bg-zinc-800 transition-all ml-2 uppercase font-black shadow-lg hover:scale-105 active:scale-95"
-                >
-                  구글 로그인하여 인증하기
-                </button>
-              )}
-            </div>
-            {!auth?.currentUser && window.location.hostname.includes('asia-northeast1.run.app') && (
-              <div className="flex items-center gap-2 mt-1">
-                <span className="text-[9px] text-blue-400 font-kr bg-blue-50 px-2 py-0.5 rounded border border-blue-100 flex items-center gap-1">
-                  <ExternalLink size={8} /> 
-                  로그인 안 될 때 등록할 주소: <span className="font-bold select-all">{window.location.hostname}</span>
-                </span>
-                <p className="text-[9px] text-gray-400 font-kr italic"> (로그인이 잘 된다면 무시하셔도 됩니다)</p>
-              </div>
+          <div className="flex items-center gap-2">
+            <div className={`w-2 h-2 rounded-full shadow-sm ${auth.currentUser ? 'bg-green-500 animate-pulse' : 'bg-red-500'}`} />
+            <span className="font-ui text-[10px] tracking-widest text-text-sub uppercase font-bold">
+              {auth.currentUser ? `연결됨: ${auth.currentUser.email}` : '관리자 인증이 필요합니다'}
+            </span>
+            {!auth.currentUser && (
+              <button 
+                onClick={handleLogin}
+                className="font-ui text-[11px] tracking-widest bg-black text-white px-3 py-1 rounded-sm hover:bg-zinc-800 transition-colors ml-2 uppercase font-bold"
+              >
+                인증하기 (Google Login)
+              </button>
             )}
-            {auth?.currentUser && (
-              <p className="text-[9px] text-gray-400 font-kr mt-1">
-                ※ 수정사항이 안 보이면 <span className="font-bold text-gray-600">Ctrl+Shift+R</span>을 눌러 새로고침 해주세요.
-              </p>
+            {authError && (
+              <div className="flex flex-col ml-4 p-6 bg-blue-50 border-2 border-blue-200 rounded-lg shadow-xl animate-in fade-in slide-in-from-top-4 duration-500 max-w-md">
+                <div className="flex items-center gap-2 mb-4">
+                  <div className="w-3 h-3 bg-blue-500 rounded-full animate-pulse" />
+                  <h3 className="text-blue-900 font-kr text-[14px] font-extrabold pb-0.5 border-b-2 border-blue-200">중요: Firebase 도메인 승인 필요</h3>
+                </div>
+                
+                <p className="text-blue-800 font-kr text-[11px] leading-relaxed mb-5">
+                  현재 접속 중인 도메인이 Firebase에서 승인되지 않았습니다.<br/>
+                  아래 주소를 복사하여 Firebase 콘솔 <span className="font-bold">{"설정 > 승인된 도메인"}</span>에 추가해 주세요.
+                </p>
+                
+                <div className="bg-white p-4 rounded-md border border-blue-100 shadow-inner mb-5">
+                  <div className="flex flex-col gap-2">
+                    <div className="flex items-center justify-between">
+                      <span className="text-blue-400 font-kr text-[9px] font-bold uppercase tracking-widest">Authorized Domain</span>
+                      <span className="text-[9px] bg-blue-100 text-blue-600 px-2 py-0.5 rounded font-bold">COPY THIS</span>
+                    </div>
+                    <div className="flex items-center gap-3 mt-1">
+                      <code className="flex-1 text-blue-700 font-mono text-[13px] font-black break-all select-all">{window.location.hostname}</code>
+                      <button 
+                        onClick={() => {
+                          const hostname = window.location.hostname;
+                          navigator.clipboard.writeText(hostname).then(() => {
+                            alert(`[${hostname}] 도메인이 복사되었습니다.\n\nFirebase 콘솔의 '승인된 도메인' 리스트에 추가해 주세요.`);
+                          });
+                        }}
+                        className="whitespace-nowrap font-kr text-[11px] bg-blue-600 text-white px-4 py-2.5 rounded-md hover:bg-blue-700 active:scale-95 transition-all shadow-md font-black ring-4 ring-blue-100"
+                      >
+                        주소 복사하기
+                      </button>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="pt-4 border-t border-blue-100">
+                  <div className="flex items-center gap-2 mb-2">
+                    <span className="text-blue-300 font-kr text-[9px] font-black uppercase">System Error Log</span>
+                  </div>
+                  <code className="text-[10px] text-blue-400 font-mono bg-blue-50/50 p-2 block rounded border border-blue-50 overflow-x-auto whitespace-pre-wrap">
+                    {authError}
+                  </code>
+                </div>
+              </div>
             )}
           </div>
         </div>
-        <div className="flex flex-wrap items-center gap-3 md:gap-8 border-b border-gray-100 pb-4 w-full">
-          {[
-            { id: 'home', label: '홈 설정' },
-            { id: 'about', label: '어바웃 설정' },
-            { id: 'categories', label: '카테고리 문구 관리' },
-            { id: 'projects', label: '프로젝트 업로드/관리' }
-          ].map((tab) => (
-            <button 
-              key={tab.id}
-              onClick={() => setActiveTab(tab.id as any)} 
-              className={`font-kr text-[13px] tracking-tight transition-all py-3 px-4 rounded-md flex items-center gap-2 ${
-                activeTab === tab.id 
-                  ? 'bg-black text-white font-bold shadow-md' 
-                  : 'text-gray-400 hover:text-black hover:bg-gray-50'
-              }`}
-            >
-              {tab.label}
-              {activeTab === tab.id && <div className="w-1.5 h-1.5 bg-white rounded-full animate-pulse" />}
-            </button>
-          ))}
-          <div className="flex-1" />
+        <div className="flex flex-wrap gap-3 md:gap-8">
+          <button 
+            onClick={() => setActiveTab('home')} 
+            className={`font-ui text-[11px] tracking-[0.2em] transition-all ${activeTab === 'home' ? 'text-black border-b border-black pb-1' : 'text-gray-300'}`}
+          >
+            홈 설정
+          </button>
+          <button 
+            onClick={() => setActiveTab('about')} 
+            className={`font-ui text-[11px] tracking-[0.2em] transition-all ${activeTab === 'about' ? 'text-black border-b border-black pb-1' : 'text-gray-300'}`}
+          >
+            어바웃 설정
+          </button>
+          <button 
+            onClick={() => setActiveTab('category')} 
+            className={`font-ui text-[11px] tracking-[0.2em] transition-all ${activeTab === 'category' ? 'text-black border-b border-black pb-1' : 'text-gray-300'}`}
+          >
+            카테고리 문구 관리
+          </button>
+          <button 
+            onClick={() => setActiveTab('projects')} 
+            className={`font-ui text-[11px] tracking-[0.2em] transition-all ${activeTab === 'projects' ? 'text-black border-b border-black pb-1' : 'text-gray-300'}`}
+          >
+            프로젝트 관리
+          </button>
           <button 
             onClick={onLogout}
-            className="font-kr text-[12px] text-red-400 hover:text-white hover:bg-red-500 transition-all px-4 py-2 rounded-md uppercase font-bold border border-red-100"
+            className="font-ui text-[11px] tracking-[0.2em] text-red-400 hover:text-red-600"
           >
             로그아웃
           </button>
         </div>
       </div>
 
-      {authError && (
-        <div className="mb-10 animate-in fade-in slide-in-from-top-4 duration-500">
-          <div className="bg-blue-600 p-8 rounded-xl shadow-2xl text-white border-4 border-blue-400">
-            <div className="flex items-start gap-4">
-              <div className="p-3 bg-white/20 rounded-full">
-                <ExternalLink size={24} className="text-white" />
-              </div>
-              <div className="flex-1">
-                <h3 className="text-[18px] font-kr font-black mb-2">도메인 승인 오류 해결 방법 (필독)</h3>
-                <p className="text-[13px] font-kr opacity-90 leading-relaxed mb-6">
-                  현재 보시는 화면은 파이어베이스(Firebase)에서 <span className="underline decoration-2 underline-offset-4">승인되지 않은 도메인</span>이라 로그인이 막혀있습니다.<br/>
-                  <span className="font-bold">특히 AI Studio에서 '새 창에서 열기'를 할 경우 주소가 바뀌므로 매번 새 주소를 등록해줘야 합니다.</span>
-                </p>
-
-                <div className="bg-white/10 p-6 rounded-lg border border-white/20 mb-6">
-                  <span className="block text-[10px] uppercase tracking-widest text-blue-200 mb-2 font-bold">현재 등록해야 할 주소</span>
-                  <div className="flex flex-col sm:flex-row items-center gap-4">
-                    <code className="flex-1 bg-black/30 px-4 py-3 rounded text-[16px] font-mono font-bold select-all break-all border border-white/10">
-                      {window.location.hostname}
-                    </code>
-                    <button 
-                      onClick={() => {
-                        navigator.clipboard.writeText(window.location.hostname);
-                        alert('도메인이 복사되었습니다.');
-                      }}
-                      className="whitespace-nowrap bg-white text-blue-700 px-6 py-3 rounded-md font-kr font-black text-[14px] hover:bg-blue-50 transition-all shadow-xl active:scale-95"
-                    >
-                      이 주소 복사하기
-                    </button>
-                  </div>
-                </div>
-
-                <div className="space-y-3">
-                  <div className="flex gap-3 items-center text-[13px] font-kr">
-                    <div className="w-5 h-5 bg-white text-blue-600 rounded-full flex items-center justify-center text-[10px] font-bold">1</div>
-                    <span>Firebase 콘솔 접속 후 <span className="font-bold">{"프로젝트 설정 > 서비스 설정 > 인증(Authentication) > 설정"}</span> 메뉴 이동</span>
-                  </div>
-                  <div className="flex gap-3 items-center text-[13px] font-kr">
-                    <div className="w-5 h-5 bg-white text-blue-600 rounded-full flex items-center justify-center text-[10px] font-bold">2</div>
-                    <span><span className="font-bold">승인된 도메인</span> 섹션에서 '도메인 추가' 클릭 후 위에서 복사한 주소를 붙여넣기</span>
-                  </div>
-                </div>
-
-                <div className="mt-8 pt-4 border-t border-white/10 opacity-50 italic text-[11px] font-mono">
-                  Error Details: {authError}
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
-
       {activeTab === 'home' && (
         <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="flex flex-col gap-10">
           <div className="flex flex-col gap-3">
-            <label className="font-ui text-[10px] tracking-widest text-gray-400 uppercase">홈 메인 제목 (Wavelet Studio 부분)</label>
-            <input value={localSettings.aboutHeadline || ''} onChange={e => updateLocalSettings(s => ({ ...s, aboutHeadline: e.target.value }))} className="border-b border-border py-3 focus:border-black outline-none font-kr text-sm transition-colors bg-transparent text-text-main" placeholder="Wavelet Studio." />
-          </div>
-          <div className="flex flex-col gap-3">
-            <label className="font-ui text-[10px] tracking-widest text-gray-400 uppercase">홈 메인 헤드라인 (상단 이미지 위)</label>
-            <input value={localSettings.homeHeadline} onChange={e => updateLocalSettings(s => ({ ...s, homeHeadline: e.target.value }))} className="border-b border-border py-3 focus:border-black outline-none font-kr text-sm transition-colors bg-transparent text-text-main" />
+            <label className="font-ui text-[10px] tracking-widest text-gray-400 uppercase">홈 메인 헤드라인 (상단)</label>
+            <input value={localSettings.homeHeadline} onChange={e => setLocalSettings(s => ({ ...s, homeHeadline: e.target.value }))} className="border-b border-border py-3 focus:border-black outline-none font-kr text-sm transition-colors bg-transparent text-text-main" />
           </div>
           <div className="flex flex-col gap-3">
             <label className="font-ui text-[10px] tracking-widest text-gray-400 uppercase">홈 메인 배경 문구 (하단)</label>
-            <input value={localSettings.homeHeadlineSub || ''} onChange={e => updateLocalSettings(s => ({ ...s, homeHeadlineSub: e.target.value }))} className="border-b border-border py-3 focus:border-black outline-none font-kr text-sm transition-colors bg-transparent text-text-main" placeholder="Photography Studio in Jeju" />
+            <input value={localSettings.homeHeadlineSub || ''} onChange={e => setLocalSettings(s => ({ ...s, homeHeadlineSub: e.target.value }))} className="border-b border-border py-3 focus:border-black outline-none font-kr text-sm transition-colors bg-transparent text-text-main" placeholder="Photography Studio in Jeju" />
           </div>
           <div className="flex flex-col gap-3">
             <label className="font-ui text-[10px] tracking-widest text-gray-400 uppercase">홈 소개 문구</label>
-            <textarea rows={3} value={localSettings.homeIntro} onChange={e => updateLocalSettings(s => ({ ...s, homeIntro: e.target.value }))} className="border-b border-border py-3 focus:border-black outline-none font-kr text-sm resize-none transition-colors bg-transparent text-text-main" />
+            <textarea rows={3} value={localSettings.homeIntro} onChange={e => setLocalSettings(s => ({ ...s, homeIntro: e.target.value }))} className="border-b border-border py-3 focus:border-black outline-none font-kr text-sm resize-none transition-colors bg-transparent text-text-main" />
           </div>
           
           <div className="flex flex-col gap-4">
@@ -489,12 +424,30 @@ export const AdminDashboard = ({
               {localSettings.heroImages?.map((url, i) => (
                 <div key={i} className="relative aspect-[4/3] group bg-bg-white border border-border overflow-hidden">
                   <img src={url} className="w-full h-full object-cover" />
-                  <button 
-                    onClick={() => updateLocalSettings(prev => ({ ...prev, heroImages: prev.heroImages?.filter((_, idx) => idx !== i) || [] }))}
-                    className="absolute inset-0 bg-red-500/80 text-white flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
-                  >
-                    <Trash2 size={18} />
-                  </button>
+                  <div className="absolute inset-0 bg-black/40 flex flex-col items-center justify-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                    <div className="flex gap-2">
+                      <button 
+                        onClick={() => moveHero(i, 'left')}
+                        disabled={i === 0}
+                        className="bg-white/90 p-2 text-black hover:bg-white disabled:opacity-30 rounded-full"
+                      >
+                        <ChevronLeft size={16} />
+                      </button>
+                      <button 
+                        onClick={() => moveHero(i, 'right')}
+                        disabled={i === (localSettings.heroImages?.length || 0) - 1}
+                        className="bg-white/90 p-2 text-black hover:bg-white disabled:opacity-30 rounded-full"
+                      >
+                        <ChevronRight size={16} />
+                      </button>
+                    </div>
+                    <button 
+                      onClick={() => setLocalSettings(prev => ({ ...prev, heroImages: prev.heroImages?.filter((_, idx) => idx !== i) || [] }))}
+                      className="bg-red-500 text-white p-2 rounded-full hover:bg-red-600 transition-colors"
+                    >
+                      <Trash2 size={16} />
+                    </button>
+                  </div>
                 </div>
               ))}
               {(localSettings.heroImages?.length || 0) === 0 && (
@@ -515,9 +468,9 @@ export const AdminDashboard = ({
                     value={cat === 'place' ? localSettings.featuredPlaceId : cat === 'food' ? localSettings.featuredFoodId : localSettings.featuredNatureId}
                     onChange={e => {
                       const id = e.target.value;
-                      if (cat === 'place') updateLocalSettings(s => ({ ...s, featuredPlaceId: id }));
-                      if (cat === 'food') updateLocalSettings(s => ({ ...s, featuredFoodId: id }));
-                      if (cat === 'nature') updateLocalSettings(s => ({ ...s, featuredNatureId: id }));
+                      if (cat === 'place') setLocalSettings(s => ({ ...s, featuredPlaceId: id }));
+                      if (cat === 'food') setLocalSettings(s => ({ ...s, featuredFoodId: id }));
+                      if (cat === 'nature') setLocalSettings(s => ({ ...s, featuredNatureId: id }));
                     }}
                     className="bg-bg-white border border-border p-3 outline-none font-ui text-xs text-text-main focus:border-black transition-colors"
                   >
@@ -533,17 +486,14 @@ export const AdminDashboard = ({
 
           <div className="flex gap-4 pt-6">
             <button 
-              onClick={handleSaveSettings}
-              disabled={isSavingSettings}
-              className={`px-12 py-4 font-ui text-[11px] tracking-[0.2em] transition-all flex items-center gap-3 font-medium ${isSavingSettings ? 'bg-gray-400 cursor-wait' : (hasUnsavedChanges ? 'bg-emerald-600 text-white hover:bg-emerald-700 shadow-xl scale-[1.02]' : 'bg-black text-white hover:bg-gray-800')}`}
+              onClick={() => onSaveSettings(localSettings)}
+              className="bg-black text-white px-12 py-4 font-ui text-[11px] tracking-[0.2em] hover:bg-gray-800 transition-colors flex items-center gap-3 font-medium"
             >
-              {isSavingSettings ? <Loader2 className="animate-spin" size={16} /> : <Save size={16} />} 
-              {isSavingSettings ? '저장 중...' : (hasUnsavedChanges ? '변경사항 저장하기*' : '설정 저장하기')}
+              <Save size={16} /> 설정 저장하기
             </button>
             <button 
               onClick={onSeedData}
-              disabled={isSavingSettings}
-              className="border border-border px-8 py-4 font-ui text-[11px] tracking-[0.2em] hover:bg-bg-warm transition-colors flex items-center gap-3 text-text-main disabled:opacity-50"
+              className="border border-border px-8 py-4 font-ui text-[11px] tracking-[0.2em] hover:bg-bg-warm transition-colors flex items-center gap-3 text-text-main"
             >
               <RefreshCw size={16} /> 초기 데이터로 복구
             </button>
@@ -554,16 +504,12 @@ export const AdminDashboard = ({
       {activeTab === 'about' && (
         <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="flex flex-col gap-10">
           <div className="flex flex-col gap-3">
-            <label className="font-ui text-[10px] tracking-widest text-gray-400 uppercase">어바웃 페이지 대제목</label>
-            <input value={localSettings.aboutHeadline} onChange={e => updateLocalSettings(s => ({ ...s, aboutHeadline: e.target.value }))} className="border-b border-border py-3 focus:border-black outline-none font-ui text-[20px] md:text-[24px] transition-colors bg-transparent text-text-main font-thin" placeholder="Wavelet Studio." />
-          </div>
-          <div className="flex flex-col gap-3">
             <label className="font-ui text-[10px] tracking-widest text-gray-400 uppercase">어바웃 페이지 부제</label>
-            <input value={localSettings.aboutSub} onChange={e => updateLocalSettings(s => ({ ...s, aboutSub: e.target.value }))} className="border-b border-border py-3 focus:border-black outline-none font-kr text-sm transition-colors bg-transparent text-text-main" />
+            <input value={localSettings.aboutSub} onChange={e => setLocalSettings(s => ({ ...s, aboutSub: e.target.value }))} className="border-b border-border py-3 focus:border-black outline-none font-kr text-sm transition-colors bg-transparent text-text-main" />
           </div>
           <div className="flex flex-col gap-3">
             <label className="font-ui text-[10px] tracking-widest text-gray-400 uppercase">어바웃 본문 내용</label>
-            <textarea rows={10} value={localSettings.aboutBody} onChange={e => updateLocalSettings(s => ({ ...s, aboutBody: e.target.value }))} className="border-b border-border py-3 focus:border-black outline-none font-kr text-sm resize-none transition-colors bg-transparent text-text-main" />
+            <textarea rows={10} value={localSettings.aboutBody} onChange={e => setLocalSettings(s => ({ ...s, aboutBody: e.target.value }))} className="border-b border-border py-3 focus:border-black outline-none font-kr text-sm resize-none transition-colors bg-transparent text-text-main" />
           </div>
 
           <div className="flex flex-col gap-4">
@@ -590,7 +536,7 @@ export const AdminDashboard = ({
             </div>
             {localSettings.aboutImage && (
               <button 
-                onClick={() => updateLocalSettings(s => ({ ...s, aboutImage: undefined }))}
+                onClick={() => setLocalSettings(s => ({ ...s, aboutImage: undefined }))}
                 className="text-red-400 text-[10px] tracking-widest hover:text-red-600 self-start"
               >
                 사진 삭제
@@ -600,41 +546,39 @@ export const AdminDashboard = ({
           
           <div className="flex gap-4 pt-6">
             <button 
-              onClick={handleSaveSettings}
-              disabled={isSavingSettings}
-              className={`px-12 py-4 font-ui text-[11px] tracking-[0.2em] transition-all flex items-center gap-3 font-medium ${isSavingSettings ? 'bg-gray-400 cursor-wait' : (hasUnsavedChanges ? 'bg-emerald-600 text-white hover:bg-emerald-700 shadow-xl scale-[1.02]' : 'bg-black text-white hover:bg-gray-800')}`}
+              onClick={() => onSaveSettings(localSettings)}
+              className="bg-black text-white px-12 py-4 font-ui text-[11px] tracking-[0.2em] hover:bg-gray-800 transition-colors flex items-center gap-3 font-medium"
             >
-              {isSavingSettings ? <Loader2 className="animate-spin" size={16} /> : <Save size={16} />} 
-              {isSavingSettings ? '저장 중...' : (hasUnsavedChanges ? '변경사항 저장하기*' : '설정 저장하기')}
+              <Save size={16} /> 설정 저장하기
             </button>
           </div>
         </motion.div>
       )}
 
-      {activeTab === 'categories' && (
-        <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="flex flex-col gap-16">
+      {activeTab === 'category' && (
+        <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="flex flex-col gap-12">
           {(['place', 'food', 'nature'] as const).map(cat => (
-            <div key={cat} className="flex flex-col gap-8 pb-10 border-b border-border last:border-0">
-              <h3 className="font-ui text-sm tracking-[0.2em] text-black uppercase font-bold">
-                {cat.toUpperCase()} 카테고리 설정
+            <div key={cat} className="flex flex-col gap-6 p-8 bg-bg-warm/30 border border-border/50 rounded-sm">
+              <h3 className="font-ui text-sm tracking-widest text-black uppercase font-bold border-b border-border pb-3">
+                {cat === 'place' ? 'PLACE' : cat === 'food' ? 'FOOD' : 'NATURE'} 카테고리 설정
               </h3>
               <div className="flex flex-col gap-3">
-                <label className="font-ui text-[10px] tracking-widest text-gray-400 uppercase font-black">대제목 (페이지 상단 크게 표시될 제목)</label>
+                <label className="font-ui text-[10px] tracking-widest text-gray-400 uppercase">대제목 (Title)</label>
                 <input 
-                  value={(localSettings as any)[`${cat}Title`] || ''} 
-                  onChange={e => updateLocalSettings(s => ({ ...s, [`${cat}Title`]: e.target.value }))} 
-                  className="border-b-2 border-black/10 py-3 focus:border-black outline-none font-ui text-[18px] tracking-widest transition-colors bg-transparent text-text-main uppercase"
-                  placeholder={(CATEGORY_META as any)[cat].title}
+                  value={localSettings[`${cat}Title` as keyof GlobalSettings] as string || ''} 
+                  onChange={e => setLocalSettings(s => ({ ...s, [`${cat}Title`]: e.target.value }))} 
+                  className="bg-bg-white border border-border p-3 outline-none font-kr text-sm focus:border-black transition-colors" 
+                  placeholder={cat.toUpperCase()}
                 />
               </div>
               <div className="flex flex-col gap-3">
-                <label className="font-ui text-[10px] tracking-widest text-gray-400 uppercase">카테고리 설명 (Description - 페이지 소개 문구)</label>
+                <label className="font-ui text-[10px] tracking-widest text-gray-400 uppercase">설명 텍스트 (Description)</label>
                 <textarea 
                   rows={4} 
-                  value={(localSettings as any)[`${cat}Description`] || ''} 
-                  onChange={e => updateLocalSettings(s => ({ ...s, [`${cat}Description`]: e.target.value }))} 
-                  className="border-b border-border py-3 focus:border-black outline-none font-kr text-sm resize-none transition-colors bg-transparent text-text-main leading-relaxed"
-                  placeholder={(CATEGORY_META as any)[cat].description}
+                  value={localSettings[`${cat}Description` as keyof GlobalSettings] as string || ''} 
+                  onChange={e => setLocalSettings(s => ({ ...s, [`${cat}Description`]: e.target.value }))} 
+                  className="bg-bg-white border border-border p-3 outline-none font-kr text-sm resize-none focus:border-black transition-colors" 
+                  placeholder="카테고리에 대한 설명을 입력하세요..."
                 />
               </div>
             </div>
@@ -642,12 +586,10 @@ export const AdminDashboard = ({
           
           <div className="flex gap-4 pt-6">
             <button 
-              onClick={handleSaveSettings}
-              disabled={isSavingSettings}
-              className={`px-12 py-4 font-ui text-[11px] tracking-[0.2em] transition-all flex items-center gap-3 font-medium ${isSavingSettings ? 'bg-gray-400 cursor-wait' : (hasUnsavedChanges ? 'bg-emerald-600 text-white hover:bg-emerald-700 shadow-xl scale-[1.02]' : 'bg-black text-white hover:bg-gray-800')}`}
+              onClick={() => onSaveSettings(localSettings)}
+              className="bg-black text-white px-12 py-4 font-ui text-[11px] tracking-[0.2em] hover:bg-gray-800 transition-colors flex items-center gap-3 font-medium"
             >
-              {isSavingSettings ? <Loader2 className="animate-spin" size={16} /> : <Save size={16} />} 
-              {isSavingSettings ? '저장 중...' : (hasUnsavedChanges ? '변경사항 저장하기*' : '설정 저장하기')}
+              <Save size={16} /> 카테고리 설정 저장하기
             </button>
           </div>
         </motion.div>

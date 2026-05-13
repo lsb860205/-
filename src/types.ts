@@ -23,7 +23,7 @@ export interface GlobalSettings {
   featuredPlaceId?: string;
   featuredFoodId?: string;
   featuredNatureId?: string;
-  // Category Metas
+  // Category texts
   placeTitle?: string;
   placeDescription?: string;
   foodTitle?: string;

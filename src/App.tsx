@@ -1,4 +1,3 @@
-// v2.0 Production Core
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { ArrowDown, LogIn } from 'lucide-react';
@@ -11,7 +10,6 @@ import {
 } from './firebase';
 import { Page, Project, GlobalSettings } from './types';
 import { getProjectSlug } from './lib/slugUtils';
-import { CATEGORY_META } from './constants';
 import { Navbar } from './components/Navbar';
 import { Footer } from './components/Footer';
 import { CategoryPage, ProjectPage } from './components/GalleryViews';
@@ -24,10 +22,7 @@ const DEFAULT_SETTINGS: GlobalSettings = {
   aboutHeadline: "Wavelet Studio",
   aboutSub: "제주의 빛과 결을 담는 스튜디오",
   aboutBody: "웨이블릿 스튜디오는 제주의 일상을 기록합니다. 우리는 사진 한 장에 담긴 빛과 그림자, 질감과 온도를 소중히 여깁니다. 그 순간들을 있는 그대로, 그러나 특별하게 담아냅니다.",
-  heroImages: [
-    "https://picsum.photos/seed/hero1/1920/1080",
-    "https://picsum.photos/seed/hero2/1920/1080"
-  ],
+  heroImages: [],
   placeTitle: 'PLACE',
   placeDescription: '제주의 공간을 기록합니다. 카페, 숙소, 그리고 그 안의 이야기. 건축의 선과 공간이 머금은 온도를 사진이라는 언어로 번역합니다.',
   foodTitle: 'FOOD',
@@ -36,6 +31,20 @@ const DEFAULT_SETTINGS: GlobalSettings = {
   natureDescription: '제주의 자연을 마주합니다. 바다, 오름, 빛의 순간들. 시시각각 변화하는 제주의 풍경 속에서 변하지 않는 아름다움을 기록합니다.'
 };
 
+const CATEGORY_META = {
+  place: { 
+    title: 'PLACE', 
+    description: '제주의 공간을 기록합니다. 카페, 숙소, 그리고 그 안의 이야기. 건축의 선과 공간이 머금은 온도를 사진이라는 언어로 번역합니다.' 
+  },
+  food: { 
+    title: 'FOOD', 
+    description: '제주의 맛을 담습니다. 한 접시에 담긴 계절과 정성. 식재료 본연의 질감과 색감을 정제된 미학으로 포착합니다.' 
+  },
+  nature: { 
+    title: 'NATURE', 
+    description: '제주의 자연을 마주합니다. 바다, 오름, 빛의 순간들. 시시각각 변화하는 제주의 풍경 속에서 변하지 않는 아름다움을 기록합니다.' 
+  }
+};
 
 const generateDummyProjects = (): Project[] => {
   const dummy: Project[] = [];
@@ -48,14 +57,14 @@ const generateDummyProjects = (): Project[] => {
   
   categories.forEach((cat, ci) => {
     clients[cat].forEach((name, i) => {
-      const seed = `${cat}-${i}`;
+      const photoCount = 6 + Math.floor(Math.random() * 4);
       dummy.push({
         id: `dummy-${cat}-${i}`,
         category: cat,
         clientName: name,
         description: `${name} - 제주의 정서를 담은 ${cat === 'place' ? '공간' : cat === 'food' ? '미식' : '풍경'} 프로젝트입니다.`,
-        mainImage: `https://picsum.photos/seed/main-${seed}/800/1000`,
-        photos: Array.from({ length: 8 }, (_, pi) => `https://picsum.photos/seed/photo-${seed}-${pi}/1000/1400`),
+        mainImage: `https://picsum.photos/800/1000?random=${ci * 10 + i}`,
+        photos: Array.from({ length: photoCount }, (_, pi) => `https://picsum.photos/1000/1400?random=${ci * 20 + i * 10 + pi}`),
         order: i
       });
     });
@@ -72,92 +81,59 @@ export default function App() {
   
   const [isAdminLoggedIn, setIsAdminLoggedIn] = useState(false);
   const [password, setPassword] = useState('');
-  const [settings, setSettings] = useState<GlobalSettings | null>(null);
-  const [projects, setProjects] = useState<Project[] | null>(null);
+  const [settings, setSettings] = useState<GlobalSettings>(DEFAULT_SETTINGS);
+  const [projects, setProjects] = useState<Project[]>([]);
   const [isInitialLoad, setIsInitialLoad] = useState(true);
-    const [user, setUser] = useState(auth?.currentUser);
+  const [user, setUser] = useState(auth?.currentUser);
 
-    // Sync auth state
-    useEffect(() => {
-      if (!auth) return;
-      const unsub = auth.onAuthStateChanged(u => {
-        setUser(u);
-        if (u) setIsAdminLoggedIn(true); // Auto-login if auth exists
-      });
-      return () => unsub();
-    }, []);
+  useEffect(() => {
+    if (!auth) return;
+    return auth.onAuthStateChanged(u => setUser(u));
+  }, []);
 
-    useEffect(() => {
-      if (!auth || !db) {
+  useEffect(() => {
+    let settingsLoaded = false;
+    let projectsLoaded = false;
+
+    const checkLoaded = () => {
+      if (settingsLoaded && projectsLoaded) {
         setIsInitialLoad(false);
-        return;
       }
+    };
 
-      let isMounted = true;
-      let settingsLoaded = false;
-      let projectsLoaded = false;
+    const unsubSettings = onSnapshot(doc(db, 'settings', 'main'), (snap) => {
+      if (snap.exists()) setSettings(snap.data() as GlobalSettings);
+      settingsLoaded = true;
+      checkLoaded();
+    }, (err) => {
+      console.warn('Settings snapshot error:', err);
+      setIsInitialLoad(false);
+      settingsLoaded = true;
+      checkLoaded();
+    });
 
-      const checkLoaded = () => {
-        if (settingsLoaded && projectsLoaded && isMounted) {
-          setIsInitialLoad(false);
-        }
-      };
-
-      const unsubSettings = onSnapshot(doc(db, 'settings', 'main'), (snap) => {
-        if (snap.exists()) {
-          setSettings(snap.data() as GlobalSettings);
-        }
-        settingsLoaded = true;
-        checkLoaded();
-      }, (err) => {
-        console.warn('Settings sync error', err);
-        settingsLoaded = true;
-        setIsInitialLoad(false); 
-        checkLoaded();
+    const unsubProjects = onSnapshot(collection(db, 'projects'), (snap) => {
+      const items = snap.docs.map(d => ({ id: d.id, ...d.data() })) as Project[];
+      // Stable sort by order then ID
+      items.sort((a, b) => {
+        const diff = (a.order ?? 0) - (b.order ?? 0);
+        if (diff !== 0) return diff;
+        return a.id.localeCompare(b.id);
       });
+      setProjects(items);
+      projectsLoaded = true;
+      checkLoaded();
+    }, (err) => {
+      console.warn('Projects snapshot error:', err);
+      setIsInitialLoad(false);
+      projectsLoaded = true;
+      checkLoaded();
+    });
 
-      const unsubProjects = onSnapshot(collection(db, 'projects'), (snap) => {
-        const items = snap.docs.map(d => ({ id: d.id, ...d.data() })) as Project[];
-        items.sort((a, b) => {
-          const diff = (a.order ?? 0) - (b.order ?? 0);
-          if (diff !== 0) return diff;
-          return a.id.localeCompare(b.id);
-        });
-        setProjects(items);
-        projectsLoaded = true;
-        checkLoaded();
-      }, (err) => {
-        console.warn('Projects sync error', err);
-        projectsLoaded = true;
-        setIsInitialLoad(false);
-        checkLoaded();
-      });
+    return () => { unsubSettings(); unsubProjects(); };
+  }, []);
 
-      // Increased timeout for more reliable initial data fetch
-      const timeout = setTimeout(() => {
-        if (isMounted && isInitialLoad) {
-          setIsInitialLoad(false);
-        }
-      }, 6000);
-
-      return () => { 
-        isMounted = false;
-        unsubSettings(); 
-        unsubProjects(); 
-        clearTimeout(timeout); 
-      };
-    }, []);
-
-  // Priority: Firebase Data > Default Settings/Projects
-  const displayProjects = useMemo(() => {
-    if (projects === null) return []; // Still loading
-    return projects.length > 0 ? projects : DUMMY_PROJECTS;
-  }, [projects]);
-
-  const displaySettings = useMemo(() => ({
-    ...DEFAULT_SETTINGS,
-    ...(settings || {})
-  }), [settings]);
+  const displayProjects = useMemo(() => projects.length > 0 ? projects : DUMMY_PROJECTS, [projects]);
 
   useEffect(() => {
     const handleHash = () => {
@@ -197,43 +173,34 @@ export default function App() {
 
   // Firebase Handlers
   const saveSettings = async (s: GlobalSettings) => {
-    if (!auth || !db) {
-      console.error('Firebase services not initialized');
-      alert('데이터베이스 연결에 실패했습니다. 잠시 후 다시 시도해주세요.');
-      return;
-    }
+    if (!db || !auth) return;
     let currentUser = auth?.currentUser;
     if (!currentUser) { 
       try {
         const result = await signInWithPopup(auth, googleProvider); 
         currentUser = result.user;
-      } catch (err: any) {
-        if (err.code === 'auth/popup-closed-by-user') return;
+      } catch (err) {
         console.error('Login failed', err);
-        alert('저장을 위해 관리자 인증이 필요합니다.');
         return;
       }
     }
     try {
-      console.log('Attempting to save settings...', s);
       await setDoc(doc(db, 'settings', 'main'), { ...s, updatedAt: new Date().toISOString() });
       alert('설정이 저장되었습니다.');
-    } catch (err) {
-      console.error('Save failed:', err);
+    } catch (err: any) {
       handleFirestoreError(err, OperationType.WRITE, 'settings/main');
-      alert('저장 실패: ' + (err instanceof Error ? err.message : '알 수 없는 오류'));
+      alert('오류: ' + (err.message || err));
     }
   };
 
   const addProject = async (p: Partial<Project>) => {
-    if (!auth || !db) return false;
+    if (!db || !auth) return false;
     let currentUser = auth?.currentUser;
     if (!currentUser) { 
       try {
         const result = await signInWithPopup(auth, googleProvider); 
         currentUser = result.user;
-      } catch (err: any) {
-        if (err.code === 'auth/popup-closed-by-user') return false;
+      } catch (err) {
         console.error('Login failed', err);
         return false;
       }
@@ -259,24 +226,37 @@ export default function App() {
         });
         await Promise.all(photoPromises);
       }
+
+      // 3. Update local state immediately for better UX
+      const newProject: Project = {
+        id,
+        category: projectData.category!,
+        clientName: projectData.clientName!,
+        description: projectData.description,
+        mainImage: projectData.mainImage!,
+        photos: photos || [],
+        photoCount: photos?.length || 0,
+        order: projects.length
+      };
+      setProjects(prev => [...prev, newProject].sort((a, b) => (a.order ?? 0) - (b.order ?? 0)));
       
-      alert('프로젝트가 성공적으로 생성되었습니다.');
+      alert('프로젝트가 생성되었습니다.');
       return true;
-    } catch (err) {
+    } catch (err: any) {
       handleFirestoreError(err, OperationType.WRITE, 'projects');
+      alert('오류: ' + (err.message || err));
       return false;
     }
   };
 
   const updateProject = async (id: string, p: Partial<Project>) => {
-    if (!auth || !db) return false;
+    if (!db || !auth) return false;
     let currentUser = auth?.currentUser;
     if (!currentUser) {
       try {
         const result = await signInWithPopup(auth, googleProvider);
         currentUser = result.user;
-      } catch (err: any) {
-        if (err.code === 'auth/popup-closed-by-user') return false;
+      } catch (err) {
         console.error('Login failed', err);
         return false;
       }
@@ -309,14 +289,15 @@ export default function App() {
       
       alert('프로젝트가 수정되었습니다.');
       return true;
-    } catch (err) {
+    } catch (err: any) {
       handleFirestoreError(err, OperationType.WRITE, `projects/${id}`);
+      alert('오류: ' + (err.message || err));
       return false;
     }
   };
 
   const deleteProject = async (id: string) => {
-    if (!auth || !db) return;
+    if (!db || !auth) return;
     if (!auth?.currentUser) {
       alert('관리자 인증이 필요합니다. 상단의 인증하기 버튼을 눌러주세요.');
       return;
@@ -334,14 +315,13 @@ export default function App() {
       await deleteDoc(doc(db, 'projects', id));
       
       alert('삭제되었습니다.');
-    } catch (err) {
+    } catch (err: any) {
       handleFirestoreError(err, OperationType.DELETE, `projects/${id}`);
-      alert('삭제 중 오류가 발생했습니다. 권한이 있는지 확인해주세요.');
+      alert('오류: ' + (err.message || err));
     }
   };
 
   const reorderProjects = async (reorderedProjects: Project[]) => {
-    if (!auth || !db) return;
     if (!auth?.currentUser) return;
     
     try {
@@ -358,15 +338,13 @@ export default function App() {
     }
   };
 
-  const seedData = async () => {
-    if (!auth || !db) return;
+  const seedData = async ( ) => {
     let currentUser = auth?.currentUser;
     if (!currentUser) { 
       try {
         const result = await signInWithPopup(auth, googleProvider); 
         currentUser = result.user;
-      } catch (err: any) {
-        if (err.code === 'auth/popup-closed-by-user') return;
+      } catch (err) {
         console.error('Login failed', err);
         return;
       }
@@ -378,15 +356,10 @@ export default function App() {
         
         // 2. Projects
         let globalOrder = 0;
-        const now = Date.now();
-        for (let i = 0; i < DUMMY_PROJECTS.length; i++) {
-          const p = DUMMY_PROJECTS[i];
-          const newId = `${now}-${i}`;
+        for (const p of DUMMY_PROJECTS) {
           const { photos, ...projectData } = p;
-          
-          await setDoc(doc(db, 'projects', newId), { 
+          await setDoc(doc(db, 'projects', p.id), { 
             ...projectData, 
-            id: newId, // Override the dummy ID
             photoCount: photos?.length || 0,
             order: globalOrder++, 
             createdAt: new Date().toISOString() 
@@ -394,15 +367,15 @@ export default function App() {
           
           if (photos && photos.length > 0) {
             const batch = writeBatch(db);
-            for (let j = 0; j < photos.length; j++) {
-              const photoId = j.toString().padStart(3, '0');
-              const photoDocRef = doc(db, `projects/${newId}/gallery`, photoId);
-              batch.set(photoDocRef, { url: photos[j], order: j });
+            for (let i = 0; i < photos.length; i++) {
+              const photoId = i.toString().padStart(3, '0');
+              const photoDocRef = doc(db, `projects/${p.id}/gallery`, photoId);
+              batch.set(photoDocRef, { url: photos[i], order: i });
             }
             await batch.commit();
           }
         }
-        alert('데이터 초기화가 완료되었습니다. 새로고침을 통해 확인해주세요.');
+        alert('데이터 초기화가 완료되었습니다.');
       } catch (err) {
         handleFirestoreError(err, OperationType.WRITE, 'projects');
       }
@@ -433,27 +406,7 @@ export default function App() {
   }
 
   if (isInitialLoad) {
-    return (
-      <div className="min-h-screen bg-bg-white flex flex-col items-center justify-center p-6 text-center">
-        <motion.div
-          animate={{ scale: [1, 1.05, 1], opacity: [0.3, 0.6, 0.3] }}
-          transition={{ duration: 2, repeat: Infinity, ease: "easeInOut" }}
-          className="font-ui text-[14px] tracking-[0.6em] text-text-main font-light uppercase"
-        >
-          WAVELET STUDIO
-        </motion.div>
-        <div className="mt-8 space-y-2">
-          <div className="w-[120px] h-[1px] bg-accent/20 mx-auto relative overflow-hidden">
-            <motion.div 
-              animate={{ x: [-120, 120] }}
-              transition={{ duration: 1.5, repeat: Infinity, ease: "linear" }}
-              className="absolute inset-0 bg-accent w-full"
-            />
-          </div>
-          <p className="font-ui text-[8px] tracking-[0.2em] opacity-40 uppercase">Synchronizing with Firebase Cloud</p>
-        </div>
-      </div>
-    );
+    return <div className="min-h-screen bg-bg-white" />;
   }
 
   return (
@@ -485,7 +438,7 @@ export default function App() {
           >
             {currentPage === 'home' && (
               <HomeView 
-                settings={displaySettings} 
+                settings={settings} 
                 onNavigate={navigateTo} 
                 allProjects={displayProjects} 
               />
@@ -505,8 +458,8 @@ export default function App() {
                   type={currentPage}
                   projects={displayProjects.filter(p => p.category === currentPage)}
                   meta={{
-                    title: (displaySettings as any)[`${currentPage}Title`] || (CATEGORY_META as any)[currentPage].title,
-                    description: (displaySettings as any)[`${currentPage}Description`] || (CATEGORY_META as any)[currentPage].description
+                    title: (settings[`${currentPage}Title` as keyof GlobalSettings] as string) || CATEGORY_META[currentPage as keyof typeof CATEGORY_META].title,
+                    description: (settings[`${currentPage}Description` as keyof GlobalSettings] as string) || CATEGORY_META[currentPage as keyof typeof CATEGORY_META].description
                   }}
                   onNavigate={navigateTo}
                   onAdmin={() => navigateTo('admin')}
@@ -515,13 +468,13 @@ export default function App() {
             )}
 
             {currentPage === 'about' && (
-              <AboutView settings={displaySettings} onNavigate={navigateTo} />
+              <AboutView settings={settings} onNavigate={navigateTo} />
             )}
 
             {currentPage === 'admin' && (
               <AdminDashboard 
-                settings={displaySettings}
-                projects={projects || []}
+                settings={settings}
+                projects={projects}
                 onSaveSettings={saveSettings}
                 onAddProject={addProject}
                 onUpdateProject={updateProject}
@@ -569,17 +522,15 @@ const HomeView = ({ settings, onNavigate, allProjects }: any) => {
     <div className="pt-[70px]">
       <section className="relative h-[calc(100vh-70px)] overflow-hidden bg-bg-warm flex items-center justify-center">
         <AnimatePresence mode="wait">
-          {heroes.length > 0 && (
-            <motion.div
-              key={heroIndex}
-              initial={{ opacity: 0, scale: 1.05 }}
-              animate={{ opacity: 1, scale: 1 }}
-              exit={{ opacity: 0 }}
-              transition={{ duration: 2.5, ease: "easeOut" }}
-              className="absolute inset-0 bg-cover bg-center"
-              style={{ backgroundImage: `url(${heroes[heroIndex]})` }}
-            />
-          )}
+          <motion.div
+            key={heroIndex}
+            initial={{ opacity: 0, scale: 1.05 }}
+            animate={{ opacity: 1, scale: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 2.5, ease: "easeOut" }}
+            className="absolute inset-0 bg-cover bg-center"
+            style={{ backgroundImage: `url(${heroes[heroIndex]})` }}
+          />
         </AnimatePresence>
         <div className="absolute inset-0 bg-black/10" />
         <div className="relative text-white text-center px-6 md:px-10">
@@ -611,7 +562,7 @@ const HomeView = ({ settings, onNavigate, allProjects }: any) => {
 
       <section className="px-6 md:px-10 py-16 md:py-24 lg:py-40 grid lg:grid-cols-2 gap-10 lg:gap-24 max-w-[1200px] mx-auto items-start lg:items-center">
         <h2 className="font-ui text-[26px] sm:text-[32px] md:text-[40px] lg:text-[48px] text-text-main leading-[1.2] font-light tracking-tight lg:max-w-[500px]">
-          {settings.aboutHeadline || 'Wavelet Studio.'}
+          {settings.homeHeadline}
         </h2>
         <div className="flex flex-col gap-6">
           <div className="w-12 h-[1px] bg-accent/30 hidden lg:block" />
