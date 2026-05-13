@@ -62,11 +62,16 @@ export const AdminDashboard = ({
   };
 
   const processFile = async (file: File, isGallery = false): Promise<Blob> => {
-    const dataUrl = await readFileAsDataURL(file);
-    // Main/Hero images: 2400px @ 0.88, Gallery: 1400px @ 0.80
-    const maxWidth = isGallery ? 1400 : 2400;
-    const quality = isGallery ? 0.80 : 0.88;
-    return compressImage(dataUrl, maxWidth, quality);
+    const objectUrl = URL.createObjectURL(file);
+    try {
+      // Main/Hero images: 2400px @ 0.88, Gallery: 1400px @ 0.80
+      const maxWidth = isGallery ? 1400 : 2400;
+      const quality = isGallery ? 0.80 : 0.88;
+      const result = await compressImage(objectUrl, maxWidth, quality);
+      return result;
+    } finally {
+      URL.revokeObjectURL(objectUrl);
+    }
   };
 
   const uploadToStorage = async (blob: Blob, path: string): Promise<string> => {
