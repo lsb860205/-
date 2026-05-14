@@ -4,7 +4,7 @@ import { Plus, Trash2, Save, RefreshCw, X, Image as ImageIcon, Upload, Loader2, 
 import { Project, GlobalSettings } from '../types';
 import { compressImage } from '../lib/imageUtils';
 import { getProjectSlug } from '../lib/slugUtils';
-import { auth, db, collection, getDocs, query, orderBy, signInWithPopup, googleProvider, storage, ref, uploadBytes, getDownloadURL } from '../firebase';
+import { auth, db, collection, getDocs, query, orderBy, signInWithPopup, googleProvider } from '../firebase';
 
 interface AdminDashboardProps {
   settings: GlobalSettings;
@@ -61,26 +61,22 @@ export const AdminDashboard = ({
     });
   };
 
-  const processFile = async (file: File, isGallery = false): Promise<Blob> => {
-    const objectUrl = URL.createObjectURL(file);
-    try {
-      console.log('압축 시작', Date.now());
-      // Main/Hero images: 2400px @ 0.88, Gallery: 1400px @ 0.80
-      const maxWidth = isGallery ? 1400 : 2400;
-      const quality = isGallery ? 0.80 : 0.88;
-      const result = await compressImage(objectUrl, maxWidth, quality);
-      console.log('압축 완료', Date.now());
-      return result;
-    } finally {
-      URL.revokeObjectURL(objectUrl);
+  const processFile = async (file: File): Promise<string> => {
+    const bitmap = await createImageBitmap(file);
+    const maxWidth = 1800;
+    const scale = bitmap.width > maxWidth ? maxWidth / bitmap.width : 1;
+    const canvas = new OffscreenCanvas(bitmap.width * scale, bitmap.height * scale);
+    const ctx = canvas.getContext('2d');
+    if (ctx) {
+      ctx.drawImage(bitmap, 0, 0, canvas.width, canvas.height);
     }
-  };
-
-  const uploadToStorage = async (blob: Blob, path: string): Promise<string> => {
-    const storageRef = ref(storage, path);
-    await uploadBytes(storageRef, blob, { contentType: 'image/jpeg' });
-    console.log('업로드 완료', Date.now());
-    return getDownloadURL(storageRef);
+    bitmap.close();
+    const blob = await canvas.convertToBlob({ type: 'image/jpeg', quality: 0.82 });
+    return new Promise((resolve) => {
+      const reader = new FileReader();
+      reader.onloadend = () => resolve(reader.result as string);
+      reader.readAsDataURL(blob);
+    });
   };
 
   const handleMainImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -89,13 +85,11 @@ export const AdminDashboard = ({
     
     setIsUploading(true);
     try {
-      const compressed = await processFile(file);
-      const filename = `main_${Date.now()}_${file.name}`;
-      const url = await uploadToStorage(compressed, `uploads/${filename}`);
-      setProjectForm(prev => ({ ...prev, mainImage: url }));
+      const base64 = await processFile(file);
+      setProjectForm(prev => ({ ...prev, mainImage: base64 }));
     } catch (error) {
       console.error('Upload failed:', error);
-      alert('이미지 업로드에 실패했습니다.');
+      alert('이미지 처리에 실패했습니다.');
     } finally {
       setIsUploading(false);
     }
@@ -105,38 +99,23 @@ export const AdminDashboard = ({
     const files = Array.from(e.target.files || []) as File[];
     if (files.length === 0) return;
 
-
     setIsUploading(true);
     setUploadProgress({ current: 0, total: files.length });
     
     try {
-      // Process in batches of 2 to speed up while maintaining order and avoiding memory spikes
-      for (let i = 0; i < files.length; i += 2) {
-        const batch = files.slice(i, i + 2);
-        
-        const batchResults = await Promise.all(batch.map(async (file, idx) => {
-          const globalIdx = i + idx;
-          const compressed = await processFile(file, true);
-          if (compressed) {
-            const filename = `gallery_${Date.now()}_${globalIdx}_${file.name}`;
-            const url = await uploadToStorage(compressed, `uploads/${filename}`);
-            return url;
-          }
-          return null;
-        }));
-
-        const validUrls = batchResults.filter((url): url is string => url !== null);
-        
-        setProjectForm(prev => ({ 
-          ...prev, 
-          photos: [...prev.photos, ...validUrls] 
-        }));
-        
-        setUploadProgress({ current: Math.min(i + 2, files.length), total: files.length });
+      const newUrls: string[] = [];
+      for (let i = 0; i < files.length; i++) {
+        setUploadProgress({ current: i + 1, total: files.length });
+        const base64 = await processFile(files[i]);
+        newUrls.push(base64);
       }
+      setProjectForm(prev => ({ 
+        ...prev, 
+        photos: [...prev.photos, ...newUrls] 
+      }));
     } catch (error) {
       console.error('Upload failed:', error);
-      alert('갤러리 이미지 업로드에 실패했습니다.');
+      alert('갤러리 이미지 처리에 실패했습니다.');
     } finally {
       setIsUploading(false);
       setUploadProgress({ current: 0, total: 0 });
@@ -154,15 +133,13 @@ export const AdminDashboard = ({
       const urls: string[] = [];
       for (let i = 0; i < files.length; i++) {
         setUploadProgress({ current: i + 1, total: files.length });
-        const compressed = await processFile(files[i]);
-        const filename = `hero_${Date.now()}_${i}_${files[i].name}`;
-        const url = await uploadToStorage(compressed, `settings/${filename}`);
-        urls.push(url);
+        const base64 = await processFile(files[i]);
+        urls.push(base64);
       }
       setLocalSettings(prev => ({ ...prev, heroImages: [...prev.heroImages, ...urls] }));
     } catch (error) {
       console.error('Upload failed:', error);
-      alert('히어로 이미지 업로드에 실패했습니다.');
+      alert('히어로 이미지 처리에 실패했습니다.');
     } finally {
       setIsUploading(false);
       setUploadProgress({ current: 0, total: 0 });
@@ -176,13 +153,11 @@ export const AdminDashboard = ({
 
     setIsUploading(true);
     try {
-      const compressed = await processFile(file);
-      const filename = `about_${Date.now()}_${file.name}`;
-      const url = await uploadToStorage(compressed, `settings/${filename}`);
-      setLocalSettings(prev => ({ ...prev, aboutImage: url }));
+      const base64 = await processFile(file);
+      setLocalSettings(prev => ({ ...prev, aboutImage: base64 }));
     } catch (error) {
       console.error('Upload failed:', error);
-      alert('어바웃 이미지 업로드에 실패했습니다.');
+      alert('어바웃 이미지 처리에 실패했습니다.');
     } finally {
       setIsUploading(false);
     }
