@@ -17,6 +17,42 @@
   body {
     @apply bg-bg-white text-text-main font-kr antialiased;
   }
+  
+  img {
+    -webkit-user-drag: none;
+    -khtml-user-drag: none;
+    -moz-user-drag: none;
+    -o-user-drag: none;
+    user-drag: none;
+    user-select: none;
+    pointer-events: none; /* 이미자 자체 클릭 비활성화 (부모의 투명 레이어가 대신 처리) */
+  }
+}
+
+.no-select {
+  -webkit-touch-callout: none;
+  -webkit-user-select: none;
+  -khtml-user-select: none;
+  -moz-user-select: none;
+  -ms-user-select: none;
+  user-select: none;
+}
+
+.image-protection-container {
+  position: relative;
+  display: inline-block;
+  overflow: hidden;
+}
+
+.image-protection-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: transparent;
+  z-index: 10;
+  cursor: default;
 }
 
 .page-transition {

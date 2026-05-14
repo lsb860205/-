@@ -46,13 +46,14 @@ export const CategoryPage = ({ type, projects, meta, onNavigate, onAdmin, settin
               className="group cursor-pointer gallery-editorial-item"
               onClick={() => onNavigate(`${type}/${getProjectSlug(project.clientName)}`)}
             >
-              <div className="relative aspect-[4/5] bg-bg-warm overflow-hidden shadow-sm">
+              <div className="relative aspect-[4/5] bg-bg-warm overflow-hidden shadow-sm image-protection-container">
                 <img 
                   src={project.mainImage} 
                   alt={project.clientName}
                   className="w-full h-full object-cover grayscale-0 lg:grayscale opacity-90 transition-all duration-1000 group-hover:scale-105 lg:group-hover:grayscale-0 group-hover:opacity-100"
                 />
-                <div className="absolute inset-0 bg-black/0 group-hover:bg-black/10 transition-colors flex items-center justify-center opacity-0 group-hover:opacity-100 duration-700">
+                <div className="image-protection-overlay" />
+                <div className="absolute inset-x-0 inset-y-0 bg-black/0 group-hover:bg-black/10 transition-colors flex items-center justify-center opacity-0 group-hover:opacity-100 duration-700 pointer-events-none z-20">
                   <span className="text-white font-ui text-[11px] tracking-[0.4em] font-light border-b border-white/50 pb-1">VIEW PROJECT</span>
                 </div>
               </div>
@@ -191,11 +192,14 @@ export const ProjectPage = ({ project, categoryProjects, onBack, onAdmin, onNavi
                   className={`cursor-zoom-in group flex items-center justify-center ${gridClasses}`}
                   onClick={() => setLightboxIndex(i)}
                 >
-                  <img 
-                    src={photo} 
-                    alt={`${project.clientName} ${i + 1}`}
-                    className="w-full h-auto block opacity-95 group-hover:opacity-100 transition-opacity duration-1000"
-                  />
+                  <div className="image-protection-container w-full h-full flex items-center justify-center">
+                    <img 
+                      src={photo} 
+                      alt={`${project.clientName} ${i + 1}`}
+                      className="w-full h-auto block opacity-95 group-hover:opacity-100 transition-opacity duration-1000"
+                    />
+                    <div className="image-protection-overlay" />
+                  </div>
                 </motion.div>
               );
             })}

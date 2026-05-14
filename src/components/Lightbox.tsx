@@ -65,13 +65,14 @@ export const Lightbox = ({ images, index, onClose, onPrev, onNext }: LightboxPro
           drag="x"
           dragConstraints={{ left: 0, right: 0 }}
           onDragEnd={handleDragEnd}
-          className="relative z-[3040] flex items-center justify-center w-full h-full"
+          className="relative z-[3040] flex items-center justify-center w-full h-full image-protection-container"
         >
           <img
             src={images[index]}
-            className="max-w-[95vw] md:max-w-[85vw] max-h-[75vh] md:max-h-[85vh] object-contain shadow-[0_20px_50px_rgba(0,0,0,0.5)] pointer-events-none select-none"
+            className="max-w-[95vw] md:max-w-[85vw] max-h-[75vh] md:max-h-[85vh] object-contain shadow-[0_20px_50px_rgba(0,0,0,0.5)]"
             onClick={(e) => (e as any).stopPropagation()}
           />
+          <div className="image-protection-overlay" onClick={(e) => (e as any).stopPropagation()} />
         </motion.div>
 
         <button 

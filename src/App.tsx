@@ -152,6 +152,43 @@ export default function App() {
   }, []);
 
   useEffect(() => {
+    const handleGlobalEvents = (e: KeyboardEvent | MouseEvent | DragEvent) => {
+      // 1. Context Menu (Global for images, but we can do it globally)
+      if (e.type === 'contextmenu') {
+        const target = e.target as HTMLElement;
+        if (target.tagName === 'IMG' || target.classList.contains('image-protection-overlay')) {
+          e.preventDefault();
+        }
+      }
+      
+      // 2. Drag Start
+      if (e.type === 'dragstart') {
+        const target = e.target as HTMLElement;
+        if (target.tagName === 'IMG' || target.classList.contains('image-protection-overlay')) {
+          e.preventDefault();
+        }
+      }
+
+      // 3. Shortcuts (Ctrl+S, Ctrl+U)
+      if (e instanceof KeyboardEvent) {
+        if ((e.ctrlKey || e.metaKey) && (e.key === 's' || e.key === 'i' || e.key === 'u')) {
+          e.preventDefault();
+        }
+      }
+    };
+
+    window.addEventListener('contextmenu', handleGlobalEvents as any);
+    window.addEventListener('dragstart', handleGlobalEvents as any);
+    window.addEventListener('keydown', handleGlobalEvents as any);
+    
+    return () => {
+      window.removeEventListener('contextmenu', handleGlobalEvents as any);
+      window.removeEventListener('dragstart', handleGlobalEvents as any);
+      window.removeEventListener('keydown', handleGlobalEvents as any);
+    };
+  }, []);
+
+  useEffect(() => {
     fetchData();
   }, [fetchData]);
 
@@ -650,8 +687,9 @@ const HomeView = ({ settings, onNavigate, allProjects }: any) => {
               className="cursor-pointer group flex flex-col"
               onClick={() => onNavigate(`${project.category}/${getProjectSlug(project.clientName)}`)}
             >
-              <div className="overflow-hidden aspect-[4/5] bg-bg-warm">
+              <div className="overflow-hidden aspect-[4/5] bg-bg-warm image-protection-container">
                 <img src={project.mainImage} className="w-full h-full object-cover grayscale-0 lg:grayscale opacity-90 group-hover:opacity-100 lg:group-hover:grayscale-0 transition-all duration-1000 group-hover:scale-105" />
+                <div className="image-protection-overlay" />
               </div>
               <div className="mt-8">
                 <span className="font-ui text-[10px] tracking-[0.4em] text-accent/60 uppercase">{project.category}</span>
@@ -683,7 +721,7 @@ const AboutView = ({ settings, onNavigate }: any) => (
           {settings.aboutBody}
         </div>
       </div>
-      <div className="aspect-[4/5] bg-bg-warm overflow-hidden shadow-sm">
+      <div className="aspect-[4/5] bg-bg-warm overflow-hidden shadow-sm image-protection-container">
         {settings.aboutImage ? (
           <img 
             src={settings.aboutImage} 
@@ -697,6 +735,7 @@ const AboutView = ({ settings, onNavigate }: any) => (
             className="w-full h-full object-cover grayscale-0 lg:grayscale brightness-95 opacity-90 lg:hover:grayscale-0 hover:opacity-100 transition-all duration-1000" 
           />
         )}
+        <div className="image-protection-overlay" />
       </div>
     </section>
     <Footer settings={settings} onAdmin={() => onNavigate('admin')} />
