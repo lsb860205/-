@@ -406,10 +406,10 @@ export const AdminDashboard = ({
             홈 설정
           </button>
           <button 
-            onClick={() => setActiveTab('about')} 
-            className={`font-ui text-[11px] tracking-[0.2em] transition-all ${activeTab === 'about' ? 'text-black border-b border-black pb-1' : 'text-gray-300'}`}
+            onClick={() => setActiveTab('projects')} 
+            className={`font-ui text-[11px] tracking-[0.2em] transition-all ${activeTab === 'projects' ? 'text-black border-b border-black pb-1' : 'text-gray-300'}`}
           >
-            어바웃 설정
+            프로젝트 관리
           </button>
           <button 
             onClick={() => setActiveTab('category')} 
@@ -418,16 +418,16 @@ export const AdminDashboard = ({
             카테고리 문구 관리
           </button>
           <button 
+            onClick={() => setActiveTab('about')} 
+            className={`font-ui text-[11px] tracking-[0.2em] transition-all ${activeTab === 'about' ? 'text-black border-b border-black pb-1' : 'text-gray-300'}`}
+          >
+            어바웃 설정
+          </button>
+          <button 
             onClick={() => setActiveTab('footer')} 
             className={`font-ui text-[11px] tracking-[0.2em] transition-all ${activeTab === 'footer' ? 'text-black border-b border-black pb-1' : 'text-gray-300'}`}
           >
             푸터 설정
-          </button>
-          <button 
-            onClick={() => setActiveTab('projects')} 
-            className={`font-ui text-[11px] tracking-[0.2em] transition-all ${activeTab === 'projects' ? 'text-black border-b border-black pb-1' : 'text-gray-300'}`}
-          >
-            프로젝트 관리
           </button>
           <button 
             onClick={onLogout}
