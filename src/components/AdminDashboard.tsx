@@ -64,10 +64,12 @@ export const AdminDashboard = ({
   const processFile = async (file: File, isGallery = false): Promise<Blob> => {
     const objectUrl = URL.createObjectURL(file);
     try {
+      console.log('압축 시작', Date.now());
       // Main/Hero images: 2400px @ 0.88, Gallery: 1400px @ 0.80
       const maxWidth = isGallery ? 1400 : 2400;
       const quality = isGallery ? 0.80 : 0.88;
       const result = await compressImage(objectUrl, maxWidth, quality);
+      console.log('압축 완료', Date.now());
       return result;
     } finally {
       URL.revokeObjectURL(objectUrl);
@@ -77,6 +79,7 @@ export const AdminDashboard = ({
   const uploadToStorage = async (blob: Blob, path: string): Promise<string> => {
     const storageRef = ref(storage, path);
     await uploadBytes(storageRef, blob, { contentType: 'image/jpeg' });
+    console.log('업로드 완료', Date.now());
     return getDownloadURL(storageRef);
   };
 
