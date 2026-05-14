@@ -39,7 +39,7 @@ export const Footer = ({ onAdmin, settings }: { onAdmin?: () => void, settings?:
           <>
             <a href="mailto:wavelet@example.com" className="hover:text-accent transition-colors underline underline-offset-4 decoration-[#1A1A1A]/20">mail</a>
             <a href="https://instagram.com" target="_blank" rel="noreferrer" className="hover:text-accent transition-colors underline underline-offset-4 decoration-[#1A1A1A]/20">instagram</a>
-            <a href="https://blog.naver.com" target="_blank" rel="noreferrer" className="hover:text-accent transition-colors underline underline-offset-4 decoration-[#1A1A1A]/20">naver blog</a>
+            <a href="https://open.kakao.com" target="_blank" rel="noreferrer" className="hover:text-accent transition-colors underline underline-offset-4 decoration-[#1A1A1A]/20">kakao talk</a>
           </>
         )}
       </div>
