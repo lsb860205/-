@@ -4,7 +4,7 @@ import { Plus, Trash2, Save, RefreshCw, X, Image as ImageIcon, Upload, Loader2, 
 import { Project, GlobalSettings } from '../types';
 import { compressImage } from '../lib/imageUtils';
 import { getProjectSlug } from '../lib/slugUtils';
-import { auth, db, collection, getDocs, query, orderBy, signInWithPopup, googleProvider } from '../firebase';
+import { auth, db, collection, getDocs, query, orderBy, signInWithPopup, googleProvider, storage, ref, uploadBytes, getDownloadURL } from '../firebase';
 
 interface AdminDashboardProps {
   settings: GlobalSettings;
@@ -61,7 +61,7 @@ export const AdminDashboard = ({
     });
   };
 
-  const processFile = async (file: File): Promise<string> => {
+  const processFile = async (file: File): Promise<Blob> => {
     const bitmap = await createImageBitmap(file);
     const maxWidth = 1800;
     const scale = bitmap.width > maxWidth ? maxWidth / bitmap.width : 1;
@@ -71,12 +71,13 @@ export const AdminDashboard = ({
       ctx.drawImage(bitmap, 0, 0, canvas.width, canvas.height);
     }
     bitmap.close();
-    const blob = await canvas.convertToBlob({ type: 'image/jpeg', quality: 0.82 });
-    return new Promise((resolve) => {
-      const reader = new FileReader();
-      reader.onloadend = () => resolve(reader.result as string);
-      reader.readAsDataURL(blob);
-    });
+    return await canvas.convertToBlob({ type: 'image/jpeg', quality: 0.82 });
+  };
+
+  const uploadToStorage = async (blob: Blob, path: string): Promise<string> => {
+    const storageRef = ref(storage, path);
+    await uploadBytes(storageRef, blob, { contentType: 'image/jpeg' });
+    return getDownloadURL(storageRef);
   };
 
   const handleMainImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -85,11 +86,13 @@ export const AdminDashboard = ({
     
     setIsUploading(true);
     try {
-      const base64 = await processFile(file);
-      setProjectForm(prev => ({ ...prev, mainImage: base64 }));
+      const blob = await processFile(file);
+      const filename = `main_${Date.now()}_${file.name}`;
+      const url = await uploadToStorage(blob, `uploads/${filename}`);
+      setProjectForm(prev => ({ ...prev, mainImage: url }));
     } catch (error) {
       console.error('Upload failed:', error);
-      alert('이미지 처리에 실패했습니다.');
+      alert('이미지 업로드에 실패했습니다.');
     } finally {
       setIsUploading(false);
     }
@@ -106,8 +109,10 @@ export const AdminDashboard = ({
       const newUrls: string[] = [];
       for (let i = 0; i < files.length; i++) {
         setUploadProgress({ current: i + 1, total: files.length });
-        const base64 = await processFile(files[i]);
-        newUrls.push(base64);
+        const blob = await processFile(files[i]);
+        const filename = `gallery_${Date.now()}_${i}_${files[i].name}`;
+        const url = await uploadToStorage(blob, `uploads/${filename}`);
+        newUrls.push(url);
       }
       setProjectForm(prev => ({ 
         ...prev, 
@@ -115,7 +120,7 @@ export const AdminDashboard = ({
       }));
     } catch (error) {
       console.error('Upload failed:', error);
-      alert('갤러리 이미지 처리에 실패했습니다.');
+      alert('갤러리 이미지 업로드에 실패했습니다.');
     } finally {
       setIsUploading(false);
       setUploadProgress({ current: 0, total: 0 });
@@ -133,13 +138,15 @@ export const AdminDashboard = ({
       const urls: string[] = [];
       for (let i = 0; i < files.length; i++) {
         setUploadProgress({ current: i + 1, total: files.length });
-        const base64 = await processFile(files[i]);
-        urls.push(base64);
+        const blob = await processFile(files[i]);
+        const filename = `hero_${Date.now()}_${i}_${files[i].name}`;
+        const url = await uploadToStorage(blob, `settings/${filename}`);
+        urls.push(url);
       }
       setLocalSettings(prev => ({ ...prev, heroImages: [...prev.heroImages, ...urls] }));
     } catch (error) {
       console.error('Upload failed:', error);
-      alert('히어로 이미지 처리에 실패했습니다.');
+      alert('히어로 이미지 업로드에 실패했습니다.');
     } finally {
       setIsUploading(false);
       setUploadProgress({ current: 0, total: 0 });
@@ -153,11 +160,13 @@ export const AdminDashboard = ({
 
     setIsUploading(true);
     try {
-      const base64 = await processFile(file);
-      setLocalSettings(prev => ({ ...prev, aboutImage: base64 }));
+      const blob = await processFile(file);
+      const filename = `about_${Date.now()}_${file.name}`;
+      const url = await uploadToStorage(blob, `settings/${filename}`);
+      setLocalSettings(prev => ({ ...prev, aboutImage: url }));
     } catch (error) {
       console.error('Upload failed:', error);
-      alert('어바웃 이미지 처리에 실패했습니다.');
+      alert('어바웃 이미지 업로드에 실패했습니다.');
     } finally {
       setIsUploading(false);
     }
