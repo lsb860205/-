@@ -535,7 +535,7 @@ export const AdminDashboard = ({
                     className="bg-bg-white border border-border p-3 outline-none font-ui text-xs text-text-main focus:border-black transition-colors"
                   >
                     <option value="">선택 안함 (랜덤 표시)</option>
-                    {Array.from(new Map(projects.filter(p => p.category === cat).map(p => [p.id, p])).values()).map(p => (
+                    {Array.from(new Map(projects.filter(p => !p.isDeleted && p.category === cat).map(p => [p.id, p])).values()).map(p => (
                       <option key={p.id} value={p.id}>{p.clientName}</option>
                     ))}
                   </select>
