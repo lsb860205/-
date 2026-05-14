@@ -1,7 +1,7 @@
 import React from 'react';
-import { Instagram, Mail, Globe } from 'lucide-react';
+import { GlobalSettings } from '../types';
 
-export const Footer = ({ onAdmin }: { onAdmin?: () => void }) => (
+export const Footer = ({ onAdmin, settings }: { onAdmin?: () => void, settings?: GlobalSettings }) => (
   <footer className="bg-[#D4E4D9] px-6 md:px-10 py-[60px] text-[#1A1A1A] mt-auto relative">
     <div className="max-w-[1200px] mx-auto flex flex-col md:flex-row justify-between items-start md:items-center gap-12">
       {/* Left: Symbol */}
@@ -24,9 +24,24 @@ export const Footer = ({ onAdmin }: { onAdmin?: () => void }) => (
 
       {/* Right: Links */}
       <div className="flex flex-col gap-3 items-start md:items-end font-ui text-[13px] tracking-wide">
-        <a href="mailto:wavelet@example.com" className="hover:text-accent transition-colors underline underline-offset-4 decoration-[#1A1A1A]/20">mail</a>
-        <a href="https://instagram.com" target="_blank" rel="noreferrer" className="hover:text-accent transition-colors underline underline-offset-4 decoration-[#1A1A1A]/20">instagram</a>
-        <a href="https://blog.naver.com" target="_blank" rel="noreferrer" className="hover:text-accent transition-colors underline underline-offset-4 decoration-[#1A1A1A]/20">naver blog</a>
+        {settings?.footerEmail && (
+          <a href={`mailto:${settings.footerEmail}`} className="hover:text-accent transition-colors underline underline-offset-4 decoration-[#1A1A1A]/20">mail</a>
+        )}
+        {settings?.footerInstagram && (
+          <a href={settings.footerInstagram} target="_blank" rel="noreferrer" className="hover:text-accent transition-colors underline underline-offset-4 decoration-[#1A1A1A]/20">instagram</a>
+        )}
+        {settings?.footerKakao && (
+          <a href={settings.footerKakao} target="_blank" rel="noreferrer" className="hover:text-accent transition-colors underline underline-offset-4 decoration-[#1A1A1A]/20">kakao talk</a>
+        )}
+        
+        {/* Fallback links if no settings yet */}
+        {!settings?.footerEmail && !settings?.footerInstagram && !settings?.footerKakao && (
+          <>
+            <a href="mailto:wavelet@example.com" className="hover:text-accent transition-colors underline underline-offset-4 decoration-[#1A1A1A]/20">mail</a>
+            <a href="https://instagram.com" target="_blank" rel="noreferrer" className="hover:text-accent transition-colors underline underline-offset-4 decoration-[#1A1A1A]/20">instagram</a>
+            <a href="https://blog.naver.com" target="_blank" rel="noreferrer" className="hover:text-accent transition-colors underline underline-offset-4 decoration-[#1A1A1A]/20">naver blog</a>
+          </>
+        )}
       </div>
     </div>
 

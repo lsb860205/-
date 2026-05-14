@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { ChevronLeft, Loader2 } from 'lucide-react';
-import { Project } from '../types';
+import { Project, GlobalSettings } from '../types';
 import { getProjectSlug } from '../lib/slugUtils';
 import { Lightbox } from './Lightbox';
 import { Footer } from './Footer';
@@ -14,9 +14,10 @@ interface CategoryPageProps {
   meta: { title: string; description: string };
   onNavigate: (p: string) => void;
   onAdmin: () => void;
+  settings: GlobalSettings;
 }
 
-export const CategoryPage = ({ type, projects, meta, onNavigate, onAdmin }: CategoryPageProps) => {
+export const CategoryPage = ({ type, projects, meta, onNavigate, onAdmin, settings }: CategoryPageProps) => {
   return (
     <div className="pt-[110px] md:pt-[140px] min-h-screen flex flex-col bg-bg-white">
       <section className="px-6 md:px-10 pb-12 md:pb-20 max-w-[1200px] mx-auto w-full">
@@ -63,8 +64,7 @@ export const CategoryPage = ({ type, projects, meta, onNavigate, onAdmin }: Cate
           ))}
         </div>
       </section>
-
-      <Footer onAdmin={onAdmin} />
+      <Footer settings={settings} onAdmin={onAdmin} />
     </div>
   );
 };
@@ -75,9 +75,10 @@ interface ProjectPageProps {
   onBack: () => void;
   onAdmin: () => void;
   onNavigate: (p: string) => void;
+  settings: GlobalSettings;
 }
 
-export const ProjectPage = ({ project, categoryProjects, onBack, onAdmin, onNavigate }: ProjectPageProps) => {
+export const ProjectPage = ({ project, categoryProjects, onBack, onAdmin, onNavigate, settings }: ProjectPageProps) => {
   const [lightboxIndex, setLightboxIndex] = useState<number | null>(null);
   const [photos, setPhotos] = useState<string[]>([]);
   const [loading, setLoading] = useState(true);
@@ -248,7 +249,7 @@ export const ProjectPage = ({ project, categoryProjects, onBack, onAdmin, onNavi
         )}
       </AnimatePresence>
 
-      <Footer onAdmin={onAdmin} />
+      <Footer settings={settings} onAdmin={onAdmin} />
     </div>
   );
 };

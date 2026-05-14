@@ -518,6 +518,7 @@ export default function App() {
                   onBack={() => navigateTo(currentPage)} 
                   onAdmin={() => navigateTo('admin')}
                   onNavigate={navigateTo}
+                  settings={settings}
                 />
               ) : (
                 <CategoryPage 
@@ -529,6 +530,7 @@ export default function App() {
                   }}
                   onNavigate={navigateTo}
                   onAdmin={() => navigateTo('admin')}
+                  settings={settings}
                 />
               )
             )}
@@ -660,7 +662,7 @@ const HomeView = ({ settings, onNavigate, allProjects }: any) => {
         </div>
       </section>
 
-      <Footer onAdmin={() => onNavigate('admin')} />
+      <Footer settings={settings} onAdmin={() => onNavigate('admin')} />
     </div>
   );
 };
@@ -697,6 +699,6 @@ const AboutView = ({ settings, onNavigate }: any) => (
         )}
       </div>
     </section>
-    <Footer onAdmin={() => onNavigate('admin')} />
+    <Footer settings={settings} onAdmin={() => onNavigate('admin')} />
   </div>
 );

@@ -31,4 +31,8 @@ export interface GlobalSettings {
   foodDescription?: string;
   natureTitle?: string;
   natureDescription?: string;
+  // Footer contacts
+  footerEmail?: string;
+  footerInstagram?: string;
+  footerKakao?: string;
 }

@@ -34,7 +34,7 @@ export const AdminDashboard = ({
   onLogout
 }: AdminDashboardProps) => {
   const [localSettings, setLocalSettings] = useState(settings);
-  const [activeTab, setActiveTab] = useState<'home' | 'about' | 'projects' | 'category'>('home');
+  const [activeTab, setActiveTab] = useState<'home' | 'about' | 'projects' | 'category' | 'footer'>('home');
   const [isUploading, setIsUploading] = useState(false);
   const [uploadProgress, setUploadProgress] = useState({ current: 0, total: 0 });
   
@@ -418,6 +418,12 @@ export const AdminDashboard = ({
             카테고리 문구 관리
           </button>
           <button 
+            onClick={() => setActiveTab('footer')} 
+            className={`font-ui text-[11px] tracking-[0.2em] transition-all ${activeTab === 'footer' ? 'text-black border-b border-black pb-1' : 'text-gray-300'}`}
+          >
+            푸터 설정
+          </button>
+          <button 
             onClick={() => setActiveTab('projects')} 
             className={`font-ui text-[11px] tracking-[0.2em] transition-all ${activeTab === 'projects' ? 'text-black border-b border-black pb-1' : 'text-gray-300'}`}
           >
@@ -644,6 +650,57 @@ export const AdminDashboard = ({
               className="bg-black text-white px-12 py-4 font-ui text-[11px] tracking-[0.2em] hover:bg-gray-800 transition-colors flex items-center gap-3 font-medium"
             >
               <Save size={16} /> 카테고리 설정 저장하기
+            </button>
+          </div>
+        </motion.div>
+      )}
+
+      {activeTab === 'footer' && (
+        <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="flex flex-col gap-10">
+          <div className="bg-bg-warm/30 p-8 border border-border/50 rounded-sm space-y-8">
+            <h3 className="font-ui text-sm tracking-widest text-black uppercase font-bold border-b border-border pb-3">푸터 연락처/링크 설정</h3>
+            
+            <div className="flex flex-col gap-3">
+              <label className="font-ui text-[10px] tracking-widest text-gray-400 uppercase">이메일 주소</label>
+              <input 
+                type="email"
+                value={localSettings.footerEmail || ''} 
+                onChange={e => setLocalSettings(s => ({ ...s, footerEmail: e.target.value }))} 
+                className="bg-bg-white border border-border p-3 outline-none font-kr text-sm focus:border-black transition-colors" 
+                placeholder="wavelet@example.com"
+              />
+              <p className="text-[10px] text-gray-400 font-kr">클릭 시 메일 앱이 자동으로 실행됩니다.</p>
+            </div>
+
+            <div className="flex flex-col gap-3">
+              <label className="font-ui text-[10px] tracking-widest text-gray-400 uppercase">인스타그램 URL</label>
+              <input 
+                value={localSettings.footerInstagram || ''} 
+                onChange={e => setLocalSettings(s => ({ ...s, footerInstagram: e.target.value }))} 
+                className="bg-bg-white border border-border p-3 outline-none font-kr text-sm focus:border-black transition-colors" 
+                placeholder="https://instagram.com/studio_id"
+              />
+              <p className="text-[10px] text-gray-400 font-kr">https://를 포함한 전체 주소를 입력하세요.</p>
+            </div>
+
+            <div className="flex flex-col gap-3">
+              <label className="font-ui text-[10px] tracking-widest text-gray-400 uppercase">카카오톡 오픈채팅 URL</label>
+              <input 
+                value={localSettings.footerKakao || ''} 
+                onChange={e => setLocalSettings(s => ({ ...s, footerKakao: e.target.value }))} 
+                className="bg-bg-white border border-border p-3 outline-none font-kr text-sm focus:border-black transition-colors" 
+                placeholder="https://open.kakao.com/me/..."
+              />
+              <p className="text-[10px] text-gray-400 font-kr">카카오톡 ID 대신 오픈채팅 링크 주소를 입력하세요.</p>
+            </div>
+          </div>
+          
+          <div className="flex gap-4 pt-6">
+            <button 
+              onClick={() => onSaveSettings(localSettings)}
+              className="bg-black text-white px-12 py-4 font-ui text-[11px] tracking-[0.2em] hover:bg-gray-800 transition-colors flex items-center gap-3 font-medium"
+            >
+              <Save size={16} /> 푸터 설정 저장하기
             </button>
           </div>
         </motion.div>
