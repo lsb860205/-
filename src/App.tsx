@@ -723,13 +723,13 @@ const AboutView = ({ settings, onNavigate }: any) => (
           <img 
             src={settings.aboutImage} 
             alt="About" 
-            className="w-full h-full object-cover grayscale-0 lg:grayscale brightness-95 opacity-90 lg:hover:grayscale-0 hover:opacity-100 transition-all duration-1000" 
+            className="w-full h-full object-cover grayscale-0 brightness-95 opacity-90 hover:opacity-100 transition-all duration-1000" 
           />
         ) : (
           <img 
             src={settings.heroImages[0]} 
             alt="About" 
-            className="w-full h-full object-cover grayscale-0 lg:grayscale brightness-95 opacity-90 lg:hover:grayscale-0 hover:opacity-100 transition-all duration-1000" 
+            className="w-full h-full object-cover grayscale-0 brightness-95 opacity-90 hover:opacity-100 transition-all duration-1000" 
           />
         )}
         <div className="image-protection-overlay" />
