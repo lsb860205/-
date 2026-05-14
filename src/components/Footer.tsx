@@ -13,12 +13,16 @@ export const Footer = ({ onAdmin, settings }: { onAdmin?: () => void, settings?:
 
       {/* Center: Info */}
       <div className="flex-grow max-w-[500px]">
-        <p className="font-kr font-light text-[13px] leading-[1.8] opacity-80">
-          Wavelet Studio는 제주에 기반을 둔 포토그래피 스튜디오입니다.<br className="hidden md:block" />
-          공간, 음식, 자연을 기록합니다.
+        <p className="font-kr font-light text-[13px] leading-[1.8] opacity-80 whitespace-pre-wrap">
+          {settings?.footerIntro || (
+            <>
+              Wavelet Studio는 제주에 기반을 둔 포토그래피 스튜디오입니다.<br className="hidden md:block" />
+              공간, 음식, 자연을 기록합니다.
+            </>
+          )}
         </p>
         <p className="font-ui text-[11px] mt-4 opacity-50 tracking-wider">
-          COPYRIGHT ©WAVELET STUDIO. ALL RIGHTS RESERVED.
+          {settings?.footerCopyright || "COPYRIGHT ©WAVELET STUDIO. ALL RIGHTS RESERVED."}
         </p>
       </div>
 

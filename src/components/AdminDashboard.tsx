@@ -693,6 +693,27 @@ export const AdminDashboard = ({
               />
               <p className="text-[10px] text-gray-400 font-kr">카카오톡 ID 대신 오픈채팅 링크 주소를 입력하세요.</p>
             </div>
+
+            <div className="flex flex-col gap-3 pt-6 border-t border-border/50">
+              <label className="font-ui text-[10px] tracking-widest text-gray-400 uppercase">푸터 소개 문구</label>
+              <textarea 
+                rows={2}
+                value={localSettings.footerIntro || ''} 
+                onChange={e => setLocalSettings(s => ({ ...s, footerIntro: e.target.value }))} 
+                className="bg-bg-white border border-border p-3 outline-none font-kr text-sm focus:border-black transition-colors resize-none" 
+                placeholder="Wavelet Studio는 제주에 기반을 둔 포토그래피 스튜디오입니다. 공간, 음식, 자연을 기록합니다."
+              />
+            </div>
+
+            <div className="flex flex-col gap-3">
+              <label className="font-ui text-[10px] tracking-widest text-gray-400 uppercase">푸터 저작권 문구</label>
+              <input 
+                value={localSettings.footerCopyright || ''} 
+                onChange={e => setLocalSettings(s => ({ ...s, footerCopyright: e.target.value }))} 
+                className="bg-bg-white border border-border p-3 outline-none font-kr text-sm focus:border-black transition-colors" 
+                placeholder="COPYRIGHT ©WAVELET STUDIO. ALL RIGHTS RESERVED."
+              />
+            </div>
           </div>
           
           <div className="flex gap-4 pt-6">

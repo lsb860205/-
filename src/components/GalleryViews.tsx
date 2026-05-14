@@ -175,7 +175,7 @@ export const ProjectPage = ({ project, categoryProjects, onBack, onAdmin, onNavi
             <span className="font-ui text-[10px] tracking-widest text-text-sub uppercase">LOADING GALLERY</span>
           </div>
         ) : (
-          <div className="grid grid-cols-12 gap-5 md:gap-8">
+          <div className="grid grid-cols-12 gap-5 md:gap-8 items-center">
             {photos.map((photo, i) => {
               let gridClasses = "col-span-12"; 
               if (i % 5 === 1 || i % 5 === 2) gridClasses = "col-span-12 sm:col-span-6";

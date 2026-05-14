@@ -153,12 +153,9 @@ export default function App() {
 
   useEffect(() => {
     const handleGlobalEvents = (e: KeyboardEvent | MouseEvent | DragEvent) => {
-      // 1. Context Menu (Global for images, but we can do it globally)
+      // 1. Context Menu (Global override as requested)
       if (e.type === 'contextmenu') {
-        const target = e.target as HTMLElement;
-        if (target.tagName === 'IMG' || target.classList.contains('image-protection-overlay')) {
-          e.preventDefault();
-        }
+        e.preventDefault();
       }
       
       // 2. Drag Start

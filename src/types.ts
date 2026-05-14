@@ -35,4 +35,6 @@ export interface GlobalSettings {
   footerEmail?: string;
   footerInstagram?: string;
   footerKakao?: string;
+  footerIntro?: string;
+  footerCopyright?: string;
 }
