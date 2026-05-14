@@ -535,7 +535,7 @@ export const AdminDashboard = ({
                     className="bg-bg-white border border-border p-3 outline-none font-ui text-xs text-text-main focus:border-black transition-colors"
                   >
                     <option value="">선택 안함 (랜덤 표시)</option>
-                    {projects.filter(p => p.category === cat).map(p => (
+                    {Array.from(new Map(projects.filter(p => p.category === cat).map(p => [p.id, p])).values()).map(p => (
                       <option key={p.id} value={p.id}>{p.clientName}</option>
                     ))}
                   </select>
@@ -966,7 +966,10 @@ export const AdminDashboard = ({
 
                         {/* Title & Info */}
                         <div className="p-4 flex flex-col gap-1">
-                          <h4 className="font-ui text-[13px] tracking-tight text-text-main font-medium truncate">{project.clientName}</h4>
+                          <div className="flex justify-between items-start">
+                            <h4 className="font-ui text-[13px] tracking-tight text-text-main font-medium truncate">{project.clientName}</h4>
+                            <span className="font-mono text-[8px] text-gray-300 select-all ml-2 shrink-0">ID: {project.id}</span>
+                          </div>
                           <div className="flex justify-between items-center text-[10px] text-text-sub font-ui uppercase tracking-widest">
                             <span className="flex items-center gap-1"><ImageIcon size={10} /> {project.photoCount || 0}</span>
                             <a 
@@ -1050,7 +1053,10 @@ export const AdminDashboard = ({
                           </div>
                         </div>
                         <div className="p-4">
-                          <h4 className="font-ui text-[13px] tracking-tight text-text-main font-medium truncate uppercase">{project.clientName}</h4>
+                          <div className="flex justify-between items-start">
+                            <h4 className="font-ui text-[13px] tracking-tight text-text-main font-medium truncate uppercase">{project.clientName}</h4>
+                            <span className="font-mono text-[8px] text-gray-300 select-all ml-2 shrink-0">ID: {project.id}</span>
+                          </div>
                           <span className="font-ui text-[9px] text-red-400 tracking-widest">{project.category.toUpperCase()}</span>
                         </div>
                       </div>
