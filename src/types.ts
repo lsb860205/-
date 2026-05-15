@@ -16,6 +16,7 @@ export interface GlobalSettings {
   homeHeadline: string;
   homeHeadlineSub?: string;
   homeIntro: string;
+  homeIntroTitle?: string;
   aboutHeadline: string;
   aboutSub: string;
   aboutBody: string;

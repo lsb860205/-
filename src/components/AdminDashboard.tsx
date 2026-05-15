@@ -449,6 +449,10 @@ export const AdminDashboard = ({
             <input value={localSettings.homeHeadlineSub || ''} onChange={e => setLocalSettings(s => ({ ...s, homeHeadlineSub: e.target.value }))} className="border-b border-border py-3 focus:border-black outline-none font-kr text-sm transition-colors bg-transparent text-text-main" placeholder="Photography Studio in Jeju" />
           </div>
           <div className="flex flex-col gap-3">
+            <label className="font-ui text-[10px] tracking-widest text-gray-400 uppercase">홈 소개 섹션 제목</label>
+            <input value={localSettings.homeIntroTitle || ''} onChange={e => setLocalSettings(s => ({ ...s, homeIntroTitle: e.target.value }))} className="border-b border-border py-3 focus:border-black outline-none font-kr text-sm transition-colors bg-transparent text-text-main" placeholder="홈 소개 섹션 제목을 입력하세요" />
+          </div>
+          <div className="flex flex-col gap-3">
             <label className="font-ui text-[10px] tracking-widest text-gray-400 uppercase">홈 소개 문구</label>
             <textarea rows={3} value={localSettings.homeIntro} onChange={e => setLocalSettings(s => ({ ...s, homeIntro: e.target.value }))} className="border-b border-border py-3 focus:border-black outline-none font-kr text-sm resize-none transition-colors bg-transparent text-text-main" />
           </div>

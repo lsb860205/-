@@ -19,6 +19,7 @@ const DEFAULT_SETTINGS: GlobalSettings = {
   homeHeadline: "Photography is the Poetry of Place",
   homeHeadlineSub: "Photography Studio in Jeju",
   homeIntro: "웨이블릿 스튜디오는 제주의 고유한 빛과 결을 담습니다.\n사진은 찰나의 순간을 기록하는 것을 넘어, 그 공간과 음식, 자연이 품고 있는 이야기를 시처럼 풀어내는 과정이라 믿습니다.",
+  homeIntroTitle: "Wavelet Studio",
   aboutHeadline: "Wavelet Studio",
   aboutSub: "제주의 빛과 결을 담는 스튜디오",
   aboutBody: "웨이블릿 스튜디오는 제주의 일상을 기록합니다. 우리는 사진 한 장에 담긴 빛과 그림자, 질감과 온도를 소중히 여깁니다. 그 순간들을 있는 그대로, 그러나 특별하게 담아냅니다.",
@@ -666,7 +667,7 @@ const HomeView = ({ settings, onNavigate, allProjects }: any) => {
 
       <section className="px-6 md:px-10 py-16 md:py-24 lg:py-40 grid lg:grid-cols-2 gap-10 lg:gap-24 max-w-[1200px] mx-auto items-start lg:items-center">
         <h2 className="font-ui text-[26px] sm:text-[32px] md:text-[40px] lg:text-[48px] text-text-main leading-[1.2] font-light tracking-tight lg:max-w-[500px]">
-          {settings.homeHeadline}
+          {settings.homeIntroTitle || settings.homeHeadline}
         </h2>
         <div className="flex flex-col gap-6">
           <div className="w-12 h-[1px] bg-accent/30 hidden lg:block" />
