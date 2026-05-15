@@ -58,47 +58,51 @@ export const Navbar = ({ currentPage, onNavigate, isMenuOpen, setIsMenuOpen }: {
 
       <AnimatePresence>
         {isMenuOpen && (
-          <motion.div
-            initial={{ x: '-100%' }}
-            animate={{ x: 0 }}
-            exit={{ x: '-100%' }}
-            transition={{ type: 'spring', damping: 25, stiffness: 200 }}
-            className="fixed inset-y-0 left-0 w-[75%] sm:w-[320px] md:w-[360px] bg-bg-white z-[999] flex flex-col p-6 pt-24 shadow-xl border-r border-border/50"
-            onClick={(e) => e.stopPropagation()}
-          >
-            <div className="flex flex-col gap-2">
-              <div className="font-ui text-[9px] tracking-[0.2em] text-accent font-semibold mb-6 px-4 opacity-60 uppercase">Menu</div>
-              {NAV_LINKS.map((link, index) => (
-                <motion.button
-                  key={link.value}
-                  initial={{ opacity: 0, x: -10 }}
-                  animate={{ opacity: 1, x: 0 }}
-                  transition={{ delay: index * 0.05 }}
-                  onClick={() => {
-                    onNavigate(link.value);
-                    setIsMenuOpen(false);
-                  }}
-                  className={`w-full p-4 text-left transition-all border rounded-sm ${
-                    currentPage === link.value 
-                      ? 'bg-bg-warm border-accent/20' 
-                      : 'border-transparent hover:bg-bg-warm/30'
-                  }`}
-                >
-                  <div className={`font-ui text-[14px] tracking-[0.15em] ${
-                    currentPage === link.value ? 'text-text-main font-medium' : 'text-text-sub'
-                  }`}>
-                    {link.label}
-                  </div>
-                </motion.button>
-              ))}
-            </div>
-
-            <div className="mt-auto p-6">
-              <div className="font-ui text-[9px] tracking-[0.25em] text-accent/40 uppercase font-medium">
-                Jeju Island Photography
+          <>
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              onClick={() => setIsMenuOpen(false)}
+              className="fixed inset-0 bg-black/20 backdrop-blur-[2px] z-[998]"
+            />
+            <motion.div
+              initial={{ x: '-100%' }}
+              animate={{ x: 0 }}
+              exit={{ x: '-100%' }}
+              transition={{ type: 'spring', damping: 30, stiffness: 300 }}
+              className="fixed inset-y-0 left-0 w-[75%] max-w-[320px] bg-bg-white z-[999] flex flex-col shadow-2xl border-r border-border/50"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <div className="flex flex-col p-6 pt-24 gap-2">
+                <div className="font-ui text-[9px] tracking-[0.2em] text-accent font-semibold mb-6 px-4 opacity-60 uppercase">Menu</div>
+                {NAV_LINKS.map((link, index) => (
+                  <motion.button
+                    key={link.value}
+                    initial={{ opacity: 0, x: -10 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    transition={{ delay: index * 0.05 }}
+                    onClick={() => {
+                      onNavigate(link.value);
+                      setIsMenuOpen(false);
+                    }}
+                    className={`w-full p-4 text-left transition-all border rounded-sm ${
+                      currentPage === link.value 
+                        ? 'bg-bg-warm border-accent/20' 
+                        : 'border-transparent hover:bg-bg-warm/30'
+                    }`}
+                  >
+                    <div className={`font-ui text-[14px] tracking-[0.15em] ${
+                      currentPage === link.value ? 'text-text-main font-semibold' : 'text-text-sub font-medium'
+                    }`}>
+                      {link.label}
+                    </div>
+                  </motion.button>
+                ))}
               </div>
-            </div>
-          </motion.div>
+
+            </motion.div>
+          </>
         )}
       </AnimatePresence>
     </nav>
