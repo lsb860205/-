@@ -38,4 +38,5 @@ export interface GlobalSettings {
   footerKakao?: string;
   footerIntro?: string;
   footerCopyright?: string;
+  footerLogo?: string;
 }

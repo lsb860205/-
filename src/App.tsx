@@ -29,7 +29,8 @@ const DEFAULT_SETTINGS: GlobalSettings = {
   foodTitle: 'FOOD',
   foodDescription: '제주의 맛을 담습니다. 한 접시에 담긴 계절과 정성. 식재료 본연의 질감과 색감을 정제된 미학으로 포착합니다.',
   natureTitle: 'NATURE',
-  natureDescription: '제주의 자연을 마주합니다. 바다, 오름, 빛의 순간들. 시시각각 변화하는 제주의 풍경 속에서 변하지 않는 아름다움을 기록합니다.'
+  natureDescription: '제주의 자연을 마주합니다. 바다, 오름, 빛의 순간들. 시시각각 변화하는 제주의 풍경 속에서 변하지 않는 아름다움을 기록합니다.',
+  footerLogo: ''
 };
 
 const CATEGORY_META = {

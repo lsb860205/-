@@ -6,9 +6,13 @@ export const Footer = ({ onAdmin, settings }: { onAdmin?: () => void, settings?:
     <div className="max-w-[1200px] mx-auto flex flex-col md:flex-row justify-between items-start md:items-center gap-12">
       {/* Left: Symbol */}
       <div className="flex-shrink-0">
-        <div className="w-8 h-8 rounded-full border border-[#1A1A1A]/30 flex items-center justify-center">
-          <div className="w-1.5 h-1.5 bg-[#1A1A1A] rounded-full" />
-        </div>
+        {settings?.footerLogo ? (
+          <img src={settings.footerLogo} alt="Footer Logo" className="h-10 w-auto object-contain" />
+        ) : (
+          <div className="w-8 h-8 rounded-full border border-[#1A1A1A]/30 flex items-center justify-center">
+            <div className="w-1.5 h-1.5 bg-[#1A1A1A] rounded-full" />
+          </div>
+        )}
       </div>
 
       {/* Center: Info */}

@@ -51,6 +51,7 @@ export const AdminDashboard = ({
   const galleryPhotosInputRef = useRef<HTMLInputElement>(null);
   const heroImagesInputRef = useRef<HTMLInputElement>(null);
   const aboutImageInputRef = useRef<HTMLInputElement>(null);
+  const footerLogoInputRef = useRef<HTMLInputElement>(null);
 
   const readFileAsDataURL = (file: File): Promise<string> => {
     return new Promise((resolve, reject) => {
@@ -169,6 +170,25 @@ export const AdminDashboard = ({
       alert('어바웃 이미지 업로드에 실패했습니다.');
     } finally {
       setIsUploading(false);
+    }
+  };
+
+  const handleFooterLogoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    setIsUploading(true);
+    try {
+      const blob = await processFile(file);
+      const filename = `footer_logo_${Date.now()}_${file.name}`;
+      const url = await uploadToStorage(blob, `settings/${filename}`);
+      setLocalSettings(prev => ({ ...prev, footerLogo: url }));
+    } catch (error) {
+      console.error('Upload failed:', error);
+      alert('푸터 로고 이미지 업로드에 실패했습니다.');
+    } finally {
+      setIsUploading(false);
+      if (footerLogoInputRef.current) footerLogoInputRef.current.value = '';
     }
   };
 
@@ -661,6 +681,50 @@ export const AdminDashboard = ({
 
       {activeTab === 'footer' && (
         <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="flex flex-col gap-10">
+          <div className="bg-bg-warm/30 p-8 border border-border/50 rounded-sm space-y-8">
+            <h3 className="font-ui text-sm tracking-widest text-black uppercase font-bold border-b border-border pb-3">푸터 로고 설정</h3>
+            
+            <div className="flex flex-col gap-4">
+              <label className="font-ui text-[10px] tracking-widest text-gray-400 uppercase">푸터 로고 이미지</label>
+              <div className="flex items-center gap-6">
+                <div className="w-24 h-24 bg-bg-white border border-border flex items-center justify-center overflow-hidden">
+                  {localSettings.footerLogo ? (
+                    <img src={localSettings.footerLogo} className="w-full h-full object-contain" />
+                  ) : (
+                    <div className="w-8 h-8 rounded-full border border-black/20 flex items-center justify-center opacity-30">
+                      <div className="w-1 h-1 bg-black rounded-full" />
+                    </div>
+                  )}
+                </div>
+                <div className="flex flex-col gap-2">
+                  <button 
+                    disabled={isUploading}
+                    onClick={() => footerLogoInputRef.current?.click()}
+                    className="bg-black text-white px-6 py-3 font-ui text-[10px] tracking-widest hover:bg-gray-800 transition-colors disabled:opacity-30 uppercase"
+                  >
+                    이미지 업로드
+                  </button>
+                  {localSettings.footerLogo && (
+                    <button 
+                      onClick={() => setLocalSettings(s => ({ ...s, footerLogo: '' }))}
+                      className="text-red-500 font-ui text-[10px] tracking-widest hover:underline uppercase"
+                    >
+                      삭제하기
+                    </button>
+                  )}
+                  <input 
+                    ref={footerLogoInputRef}
+                    type="file" 
+                    accept="image/*"
+                    onChange={handleFooterLogoUpload}
+                    className="hidden" 
+                  />
+                </div>
+              </div>
+              <p className="text-[10px] text-gray-400 font-kr">푸터 왼쪽에 표시되는 로고 이미지입니다. (권장 높이 80px 이상)</p>
+            </div>
+          </div>
+
           <div className="bg-bg-warm/30 p-8 border border-border/50 rounded-sm space-y-8">
             <h3 className="font-ui text-sm tracking-widest text-black uppercase font-bold border-b border-border pb-3">푸터 연락처/링크 설정</h3>
             
