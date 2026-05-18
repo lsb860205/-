@@ -192,11 +192,11 @@ export const ProjectPage = ({ project, categoryProjects, onBack, onAdmin, onNavi
                   className={`cursor-zoom-in group flex items-center justify-center ${gridClasses}`}
                   onClick={() => setLightboxIndex(i)}
                 >
-                  <div className="image-protection-container w-full h-full flex items-center justify-center">
+                  <div className="image-protection-container flex items-center justify-center">
                     <img 
                       src={photo} 
                       alt={`${project.clientName} ${i + 1}`}
-                      className="w-full h-auto block opacity-95 group-hover:opacity-100 transition-opacity duration-1000"
+                      className="max-w-full max-h-[85vh] object-contain block opacity-95 group-hover:opacity-100 transition-opacity duration-1000"
                     />
                     <div className="image-protection-overlay" />
                   </div>
