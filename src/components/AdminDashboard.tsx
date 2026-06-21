@@ -240,7 +240,7 @@ export const AdminDashboard = ({
     try {
       // 1. Get all projects in this category, stable sorted
       const catProjects = [...projects]
-        .filter(p => p.category === category)
+        .filter(p => p.category === category && !p.isDeleted)
         .sort((a, b) => {
           const orderDiff = (a.order ?? 0) - (b.order ?? 0);
           if (orderDiff !== 0) return orderDiff;
